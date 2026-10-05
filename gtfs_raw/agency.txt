@@ -1,0 +1,2 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url
+101,AUVASA,http://www.auvasa.es,Europe/Madrid,es,983 45 77 20,http://www.auvasa.es
