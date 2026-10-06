@@ -11,10 +11,25 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-const DATA_DIR = path.resolve('server/data');
+function findDataDir() {
+  const candidates = [
+    path.resolve(process.cwd(), 'server/data'),
+    path.resolve(process.cwd(), 'data'),
+    path.resolve(import.meta.dirname || '', 'data'),
+    path.resolve(import.meta.dirname || '', '../server/data'),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c) && fs.existsSync(path.join(c, 'routes.json'))) {
+      return c;
+    }
+  }
+  return path.resolve('server/data');
+}
+
+const DATA_DIR = findDataDir();
 
 // Load static GTFS data into memory
-console.log('Cargando datos estáticos de AUVASA en memoria...');
+console.log(`Cargando datos estáticos de AUVASA desde ${DATA_DIR}...`);
 const routesData = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'routes.json'), 'utf-8'));
 const stopsData = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'stops.json'), 'utf-8'));
 const shapesData = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'shapes.json'), 'utf-8'));
@@ -60,7 +75,7 @@ async function fetchRealtimeVehicles() {
   try {
     const res = await axios.get(AUVASA_ENDPOINTS.vehicles, {
       responseType: 'arraybuffer',
-      timeout: 8000,
+      timeout: 5000,
     });
     const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(new Uint8Array(res.data));
 
@@ -84,7 +99,7 @@ async function fetchRealtimeVehicles() {
         tripId: trip.tripId || '',
         lat: pos.latitude || 0,
         lon: pos.longitude || 0,
-        speed: Math.round((pos.speed || 0) * 3.6), // convert m/s to km/h
+        speed: Math.round((pos.speed || 0) * 3.6),
         bearing: pos.bearing || 0,
         timestamp: v.timestamp ? Number(v.timestamp) : Math.floor(Date.now() / 1000),
         occupancy: v.occupancyStatus || 'UNKNOWN',
@@ -103,7 +118,7 @@ async function fetchRealtimeTripUpdates() {
   try {
     const res = await axios.get(AUVASA_ENDPOINTS.tripUpdates, {
       responseType: 'arraybuffer',
-      timeout: 8000,
+      timeout: 5000,
     });
     const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(new Uint8Array(res.data));
 
@@ -139,7 +154,7 @@ async function fetchRealtimeAlerts() {
   try {
     const res = await axios.get(AUVASA_ENDPOINTS.alerts, {
       responseType: 'arraybuffer',
-      timeout: 8000,
+      timeout: 5000,
     });
     const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(new Uint8Array(res.data));
 
@@ -168,20 +183,40 @@ async function fetchRealtimeAlerts() {
   }
 }
 
-// Poller loop: vehicle & trip updates every 10s, alerts every 30s
-async function pollLoop() {
-  await Promise.allSettled([fetchRealtimeVehicles(), fetchRealtimeTripUpdates()]);
+// On-demand caching for serverless environments
+async function ensureRealtimeData() {
+  const now = Date.now();
+  const lastUpdate = rtState.lastVehiclesUpdate ? new Date(rtState.lastVehiclesUpdate).getTime() : 0;
+  if (now - lastUpdate > 12000 || rtState.vehicles.length === 0) {
+    await Promise.allSettled([fetchRealtimeVehicles(), fetchRealtimeTripUpdates()]);
+  }
 }
 
-pollLoop();
-fetchRealtimeAlerts();
-setInterval(pollLoop, 10000);
-setInterval(fetchRealtimeAlerts, 30000);
+async function ensureAlertsData() {
+  const now = Date.now();
+  const lastUpdate = rtState.lastAlertsUpdate ? new Date(rtState.lastAlertsUpdate).getTime() : 0;
+  if (now - lastUpdate > 30000 || rtState.alerts.length === 0) {
+    await fetchRealtimeAlerts();
+  }
+}
+
+// Poller loop for persistent background execution (local/container environments)
+if (!process.env.VERCEL) {
+  const pollLoop = async () => {
+    await Promise.allSettled([fetchRealtimeVehicles(), fetchRealtimeTripUpdates()]);
+  };
+  pollLoop();
+  fetchRealtimeAlerts();
+  setInterval(pollLoop, 10000);
+  setInterval(fetchRealtimeAlerts, 30000);
+}
 
 // --- REST API ROUTES ---
+const router = express.Router();
 
 // Health & status
-app.get('/api/health', (req, res) => {
+router.get('/health', async (req, res) => {
+  await ensureRealtimeData();
   res.json({
     status: 'ok',
     uptime: Math.floor(process.uptime()),
@@ -196,7 +231,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // All routes
-app.get('/api/lines', (req, res) => {
+router.get('/lines', (req, res) => {
   res.json({
     routes: routesData,
     total: routesData.length,
@@ -204,19 +239,18 @@ app.get('/api/lines', (req, res) => {
 });
 
 // Single route details
-app.get('/api/lines/:lineId', (req, res) => {
+router.get('/lines/:lineId', async (req, res) => {
+  await ensureRealtimeData();
   const lineId = req.params.lineId;
   const route = routeById.get(lineId) || routeByShortName.get(lineId);
   if (!route) {
     return res.status(404).json({ error: 'Línea no encontrada' });
   }
 
-  // Find live vehicles currently running this line
   const liveBuses = rtState.vehicles.filter(
     v => v.routeId === route.id || v.lineName.toUpperCase() === route.shortName.toUpperCase()
   );
 
-  // Attach shape coordinates if available
   const directionsWithShapes = {};
   for (const [dirKey, dirInfo] of Object.entries(route.directions || {})) {
     const shapeCoords = dirInfo.shapeId ? shapesData[dirInfo.shapeId] || [] : [];
@@ -234,7 +268,7 @@ app.get('/api/lines/:lineId', (req, res) => {
 });
 
 // All stops
-app.get('/api/stops', (req, res) => {
+router.get('/stops', (req, res) => {
   res.json({
     stops: stopsData,
     total: stopsData.length,
@@ -242,7 +276,8 @@ app.get('/api/stops', (req, res) => {
 });
 
 // Real-time arrivals for a stop
-app.get('/api/stops/:stopCode/arrivals', (req, res) => {
+router.get('/stops/:stopCode/arrivals', async (req, res) => {
+  await ensureRealtimeData();
   const { stopCode } = req.params;
   const stopObj = stopByCode.get(stopCode);
 
@@ -258,7 +293,6 @@ app.get('/api/stops/:stopCode/arrivals', (req, res) => {
 
   const realTimeArrivals = [];
 
-  // Match active tripUpdates
   for (const tu of rtState.tripUpdates) {
     const tripSeqMap = tripStopSeqMap[tu.tripId];
     if (!tripSeqMap) continue;
@@ -272,7 +306,6 @@ app.get('/api/stops/:stopCode/arrivals', (req, res) => {
         if (!arrivalTimestamp) continue;
 
         const diffSeconds = arrivalTimestamp - nowSec;
-        // Include buses within -60s (just arrived) up to 60 minutes
         if (diffSeconds >= -90 && diffSeconds <= 3600) {
           const route = routeById.get(tu.routeId) || routeByShortName.get(tu.routeId);
           const vehicle = rtState.vehicles.find(v => v.tripId === tu.tripId || (tu.vehicleId && v.vehicleId === tu.vehicleId));
@@ -304,21 +337,18 @@ app.get('/api/stops/:stopCode/arrivals', (req, res) => {
     }
   }
 
-  // Fallback to scheduled arrivals if needed
   const scheduledList = scheduledArrivals[stopCode] || [];
   const scheduledArrivalsOutput = [];
 
   for (const s of scheduledList) {
     if (s.d >= currentTimeStr) {
-      // Parse dep time
       const [h, m, sec] = s.d.split(':').map(Number);
       const schedDate = new Date();
       schedDate.setHours(h, m, sec || 0, 0);
       const schedTimestamp = Math.floor(schedDate.getTime() / 1000);
       const diffSec = schedTimestamp - nowSec;
 
-      if (diffSec >= 0 && diffSec <= 5400) { // next 90 mins
-        // Check if there is already an active real-time bus for this line within 5 mins of this time
+      if (diffSec >= 0 && diffSec <= 5400) {
         const hasRealtimeNearby = realTimeArrivals.some(
           rta => rta.routeShortName === s.r && Math.abs(rta.timestamp - schedTimestamp) < 300
         );
@@ -343,7 +373,6 @@ app.get('/api/stops/:stopCode/arrivals', (req, res) => {
     }
   }
 
-  // Combine and sort by seconds remaining
   const allArrivals = [...realTimeArrivals, ...scheduledArrivalsOutput]
     .sort((a, b) => a.secondsRemaining - b.secondsRemaining)
     .slice(0, 15);
@@ -361,7 +390,8 @@ app.get('/api/stops/:stopCode/arrivals', (req, res) => {
 });
 
 // All active vehicles
-app.get('/api/realtime/vehicles', (req, res) => {
+router.get('/realtime/vehicles', async (req, res) => {
+  await ensureRealtimeData();
   res.json({
     count: rtState.vehicles.length,
     updatedAt: rtState.lastVehiclesUpdate,
@@ -370,7 +400,8 @@ app.get('/api/realtime/vehicles', (req, res) => {
 });
 
 // Service alerts
-app.get('/api/realtime/alerts', (req, res) => {
+router.get('/realtime/alerts', async (req, res) => {
+  await ensureAlertsData();
   res.json({
     count: rtState.alerts.length,
     updatedAt: rtState.lastAlertsUpdate,
@@ -378,15 +409,24 @@ app.get('/api/realtime/alerts', (req, res) => {
   });
 });
 
-// Serve frontend in production build
+// Mount router on both /api and / to handle direct and rewritten requests seamlessly
+app.use('/api', router);
+app.use('/', router);
+
+// Serve frontend in standalone production build
 const DIST_DIR = path.resolve('dist');
-if (fs.existsSync(DIST_DIR)) {
+if (fs.existsSync(DIST_DIR) && !process.env.VERCEL) {
   app.use(express.static(DIST_DIR));
   app.use((req, res) => {
     res.sendFile(path.join(DIST_DIR, 'index.html'));
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor AUVASA VallaBus API activo en http://localhost:${PORT}`);
-});
+// Start listening only in standalone server mode (not in Vercel serverless)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor AUVASA VallaBus API activo en http://localhost:${PORT}`);
+  });
+}
+
+export default app;
