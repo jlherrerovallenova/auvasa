@@ -11,8 +11,8 @@ export interface BusMarkerRenderOptions {
 }
 
 /**
- * Generates an SVG illustration customized for each specific AUVASA bus model.
- * Width & height are responsive, with standard buses at 76x38 and articulated at 104x38.
+ * Generates a scalable SVG illustration customized for each specific AUVASA bus model.
+ * Uses viewBox so it scales sharply to any dimension.
  */
 export function getBusSvgIllustration({
   fleet,
@@ -22,8 +22,7 @@ export function getBusSvgIllustration({
   vehicleId,
 }: BusMarkerRenderOptions): string {
   const isArticulated = fleet.isArticulated || fleet.typeKey === 'irizar-ie-tram-articulated' || fleet.typeKey === 'articulated-gnc';
-  const width = isArticulated ? 98 : 72;
-  const height = 36;
+  const viewBox = isArticulated ? '0 0 98 36' : '0 0 72 36';
   const unitNum = vehicleId ? `#${vehicleId}` : '';
 
   // Safe XML lineName
@@ -32,9 +31,9 @@ export function getBusSvgIllustration({
   const cleanTextColor = routeTextColor || '#FFFFFF';
 
   if (fleet.typeKey === 'irizar-ie-tram-articulated') {
-    // IRIZAR IE TRAM 18M ARTICULADO (Futurista 100% Eléctrico con fuelle)
+    // IRIZAR IE TRAM 18M ARTICULADO (100% Eléctrico con fuelle)
     return `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 98 36" width="${width}" height="${height}" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.45));">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
       <defs>
         <linearGradient id="ieTramBody" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stop-color="#1e293b"/>
@@ -52,12 +51,12 @@ export function getBusSvgIllustration({
       </defs>
 
       <!-- Front Car Body -->
-      <path d="M4 12 C4 8, 12 5, 22 5 L44 5 L44 29 L7 29 C4 29, 4 22, 4 18 Z" fill="url(#ieTramBody)" stroke="#475569" stroke-width="0.7"/>
+      <path d="M4 12 C4 8, 12 5, 22 5 L44 5 L44 29 L7 29 C4 29, 4 22, 4 18 Z" fill="url(#ieTramBody)" stroke="#475569" stroke-width="0.8"/>
       
       <!-- Rear Car Body -->
-      <path d="M52 5 L88 5 C94 5, 96 9, 96 15 L96 29 L52 29 Z" fill="url(#ieTramBody)" stroke="#475569" stroke-width="0.7"/>
+      <path d="M52 5 L88 5 C94 5, 96 9, 96 15 L96 29 L52 29 Z" fill="url(#ieTramBody)" stroke="#475569" stroke-width="0.8"/>
 
-      <!-- Roof Fairing / Pantograph Pod (100% Electric Aerodynamic Dome) -->
+      <!-- Roof Fairing / Pantograph Pod -->
       <path d="M10 5 C14 2, 28 2, 38 4 L44 5 L10 5 Z" fill="url(#ieTramSilver)" opacity="0.95"/>
       <path d="M52 5 L82 4 C88 2, 92 4, 94 5 Z" fill="url(#ieTramSilver)" opacity="0.95"/>
 
@@ -71,7 +70,6 @@ export function getBusSvgIllustration({
 
       <!-- Streamlined Tram Front Windshield -->
       <path d="M5 16 C5 10, 11 7, 18 7 L20 18 L6 18 Z" fill="url(#ieTramGlass)"/>
-      <path d="M5 18 L5 21 C5 22, 7 23, 9 23 L9 18 Z" fill="#67e8f9" opacity="0.7"/>
 
       <!-- Passenger Windows Front & Rear -->
       <rect x="22" y="7" width="10" height="11" rx="1.5" fill="url(#ieTramGlass)"/>
@@ -81,7 +79,7 @@ export function getBusSvgIllustration({
       <rect x="82" y="7" width="12" height="11" rx="1.5" fill="url(#ieTramGlass)"/>
 
       <!-- Electric 100% Badge (Zap) -->
-      <circle cx="8" cy="11" r="3" fill="#10b981"/>
+      <circle cx="8" cy="11" r="3.2" fill="#10b981"/>
       <path d="M8 9.2 L6.8 11.2 L8 11.2 L7.8 12.8 L9.2 10.8 L8 10.8 Z" fill="#ffffff"/>
 
       <!-- Wheels with Aero Skirts -->
@@ -95,18 +93,18 @@ export function getBusSvgIllustration({
       <circle cx="84" cy="29" r="2" fill="#94a3b8"/>
 
       <!-- Line Badge & Destination display -->
-      <rect x="21" y="8" width="21" height="9.5" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1"/>
-      <text x="31.5" y="15.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="7.5" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
+      <rect x="21" y="8" width="21" height="10" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1.2"/>
+      <text x="31.5" y="15.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
 
       <!-- Unit ID -->
-      ${unitNum ? `<text x="74" y="25" font-family="monospace" font-size="5.5" font-weight="700" fill="#94a3b8" text-anchor="middle">${unitNum}</text>` : ''}
+      ${unitNum ? `<text x="74" y="25" font-family="monospace" font-size="6" font-weight="800" fill="#94a3b8" text-anchor="middle">${unitNum}</text>` : ''}
     </svg>`;
   }
 
   if (fleet.typeKey === 'irizar-ie-tram-standard') {
     // IRIZAR IE TRAM 12M ESTÁNDAR (100% Eléctrico diseño tranvía)
     return `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 36" width="${width}" height="${height}" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.45));">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
       <defs>
         <linearGradient id="ieTramStdBody" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stop-color="#1e293b"/>
@@ -124,7 +122,7 @@ export function getBusSvgIllustration({
       </defs>
 
       <!-- Aerodynamic Main Tram-Bus Body -->
-      <path d="M4 13 C4 8, 11 5, 20 5 L64 5 C68 5, 70 8, 70 13 L70 29 L7 29 C4 29, 4 22, 4 17 Z" fill="url(#ieTramStdBody)" stroke="#475569" stroke-width="0.7"/>
+      <path d="M4 13 C4 8, 11 5, 20 5 L64 5 C68 5, 70 8, 70 13 L70 29 L7 29 C4 29, 4 22, 4 17 Z" fill="url(#ieTramStdBody)" stroke="#475569" stroke-width="0.8"/>
 
       <!-- Roof Battery Fairing -->
       <path d="M12 5 C16 2, 40 2, 58 3 L65 5 L12 5 Z" fill="url(#ieEcoGreen)" opacity="0.95"/>
@@ -138,7 +136,7 @@ export function getBusSvgIllustration({
       <rect x="53" y="7" width="14" height="11" rx="1.5" fill="url(#ieGlass)"/>
 
       <!-- Electric 100% Symbol -->
-      <circle cx="8" cy="11" r="3" fill="#10b981"/>
+      <circle cx="8" cy="11" r="3.2" fill="#10b981"/>
       <path d="M8 9.2 L6.8 11.2 L8 11.2 L7.8 12.8 L9.2 10.8 L8 10.8 Z" fill="#ffffff"/>
 
       <!-- Wheels with Sleek Rims -->
@@ -149,18 +147,18 @@ export function getBusSvgIllustration({
       <circle cx="57" cy="29" r="2" fill="#94a3b8"/>
 
       <!-- Line Badge Display -->
-      <rect x="21" y="8" width="22" height="9.5" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1"/>
-      <text x="32" y="15.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="7.5" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
+      <rect x="21" y="8" width="22" height="10" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1.2"/>
+      <text x="32" y="15.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
 
       <!-- Unit ID -->
-      ${unitNum ? `<text x="50" y="25" font-family="monospace" font-size="5.5" font-weight="700" fill="#94a3b8" text-anchor="middle">${unitNum}</text>` : ''}
+      ${unitNum ? `<text x="50" y="25" font-family="monospace" font-size="6" font-weight="800" fill="#94a3b8" text-anchor="middle">${unitNum}</text>` : ''}
     </svg>`;
   }
 
   if (fleet.typeKey === 'solaris-urbino-hybrid') {
-    // SOLARIS URBINO HÍBRIDO (Diseño asimétrico con ceja Solaris y pack híbrido en techo)
+    // SOLARIS URBINO HÍBRIDO
     return `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 36" width="${width}" height="${height}" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.45));">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
       <defs>
         <linearGradient id="solarisBody" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stop-color="#f8fafc"/>
@@ -175,11 +173,10 @@ export function getBusSvgIllustration({
 
       <!-- Solaris Roof Hybrid Unit -->
       <rect x="24" y="2" width="24" height="4" rx="2" fill="#8b5cf6" stroke="#6d28d9" stroke-width="0.6"/>
-      <!-- Hybrid Leaf Emblem -->
       <circle cx="36" cy="4" r="1.5" fill="#a78bfa"/>
 
       <!-- Bus Body with Solaris Asymmetric Front Cut -->
-      <path d="M4 14 L8 6 L66 6 C69 6, 70 8, 70 12 L70 29 L5 29 C4 29, 3 25, 4 14 Z" fill="url(#solarisBody)" stroke="#94a3b8" stroke-width="0.7"/>
+      <path d="M4 14 L8 6 L66 6 C69 6, 70 8, 70 12 L70 29 L5 29 C4 29, 3 25, 4 14 Z" fill="url(#solarisBody)" stroke="#94a3b8" stroke-width="0.8"/>
 
       <!-- Lower AUVASA Valladolid Color Strip -->
       <path d="M4 23 L70 23 L70 29 L4 29 Z" fill="#008075"/>
@@ -193,8 +190,8 @@ export function getBusSvgIllustration({
       <rect x="51" y="7" width="16" height="11" rx="1.5" fill="url(#solarisGlass)"/>
 
       <!-- Eco Hybrid Badge -->
-      <circle cx="8" cy="21" r="2.5" fill="#8b5cf6"/>
-      <text x="8" y="22.5" font-family="sans-serif" font-size="3.5" font-weight="900" fill="#ffffff" text-anchor="middle">H</text>
+      <circle cx="8" cy="21" r="2.8" fill="#8b5cf6"/>
+      <text x="8" y="22.5" font-family="sans-serif" font-size="4" font-weight="900" fill="#ffffff" text-anchor="middle">H</text>
 
       <!-- Wheels -->
       <circle cx="16" cy="29" r="4.5" fill="#1e293b" stroke="#64748b" stroke-width="1.2"/>
@@ -204,18 +201,18 @@ export function getBusSvgIllustration({
       <circle cx="56" cy="29" r="2" fill="#cbd5e1"/>
 
       <!-- Line Badge -->
-      <rect x="21" y="8" width="21" height="9.5" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1"/>
-      <text x="31.5" y="15.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="7.5" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
+      <rect x="21" y="8" width="21" height="10" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1.2"/>
+      <text x="31.5" y="15.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
 
       <!-- Unit ID -->
-      ${unitNum ? `<text x="50" y="26.5" font-family="monospace" font-size="5" font-weight="800" fill="#ffffff" text-anchor="middle">${unitNum}</text>` : ''}
+      ${unitNum ? `<text x="50" y="26.5" font-family="monospace" font-size="5.5" font-weight="800" fill="#ffffff" text-anchor="middle">${unitNum}</text>` : ''}
     </svg>`;
   }
 
   if (fleet.typeKey === 'man-lions-city-gnc') {
-    // MAN LION'S CITY GNC (Cúpula de gas GNC aerodinámica en techo + máscara negra MAN)
+    // MAN LION'S CITY GNC
     return `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 36" width="${width}" height="${height}" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.45));">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
       <defs>
         <linearGradient id="manBody" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stop-color="#ffffff"/>
@@ -237,7 +234,7 @@ export function getBusSvgIllustration({
       <text x="28" y="4.5" font-family="sans-serif" font-size="3" font-weight="900" fill="#ffffff" text-anchor="middle">ECO GNC</text>
 
       <!-- Main Bus Body -->
-      <rect x="4" y="6" width="66" height="23" rx="3" fill="url(#manBody)" stroke="#94a3b8" stroke-width="0.7"/>
+      <rect x="4" y="6" width="66" height="23" rx="3" fill="url(#manBody)" stroke="#94a3b8" stroke-width="0.8"/>
 
       <!-- MAN Black Gloss Front Mask -->
       <path d="M4 12 L14 12 L14 26 L4 26 Z" fill="#0f172a"/>
@@ -260,18 +257,18 @@ export function getBusSvgIllustration({
       <circle cx="56" cy="29" r="2" fill="#cbd5e1"/>
 
       <!-- Line Badge -->
-      <rect x="19" y="8.5" width="22" height="9" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1"/>
-      <text x="30" y="15" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="7.5" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
+      <rect x="19" y="8.5" width="22" height="9.5" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1.2"/>
+      <text x="30" y="15" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
 
       <!-- Unit ID -->
-      ${unitNum ? `<text x="50" y="27" font-family="monospace" font-size="5" font-weight="800" fill="#ffffff" text-anchor="middle">${unitNum}</text>` : ''}
+      ${unitNum ? `<text x="50" y="27" font-family="monospace" font-size="5.5" font-weight="800" fill="#ffffff" text-anchor="middle">${unitNum}</text>` : ''}
     </svg>`;
   }
 
   if (fleet.typeKey === 'articulated-gnc') {
-    // ARTICULADO ORUGA 18M (Fuelle central, 3 ejes)
+    // ARTICULADO ORUGA 18M
     return `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 98 36" width="${width}" height="${height}" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.45));">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
       <defs>
         <linearGradient id="artBody" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stop-color="#ffffff"/>
@@ -285,9 +282,9 @@ export function getBusSvgIllustration({
       </defs>
 
       <!-- Front Section -->
-      <rect x="4" y="6" width="40" height="23" rx="3" fill="url(#artBody)" stroke="#94a3b8" stroke-width="0.7"/>
+      <rect x="4" y="6" width="40" height="23" rx="3" fill="url(#artBody)" stroke="#94a3b8" stroke-width="0.8"/>
       <!-- Rear Section -->
-      <rect x="52" y="6" width="42" height="23" rx="3" fill="url(#artBody)" stroke="#94a3b8" stroke-width="0.7"/>
+      <rect x="52" y="6" width="42" height="23" rx="3" fill="url(#artBody)" stroke="#94a3b8" stroke-width="0.8"/>
 
       <!-- Roof CNG Tank -->
       <path d="M12 6 C12 3, 30 3, 36 6 Z" fill="#0284c7" opacity="0.9"/>
@@ -324,17 +321,17 @@ export function getBusSvgIllustration({
       <circle cx="84" cy="29" r="2" fill="#cbd5e1"/>
 
       <!-- Line Badge -->
-      <rect x="17" y="8.5" width="21" height="9" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1"/>
-      <text x="27.5" y="15" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="7.5" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
+      <rect x="17" y="8.5" width="21" height="9.5" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1.2"/>
+      <text x="27.5" y="15" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
 
       <!-- Unit ID -->
-      ${unitNum ? `<text x="74" y="27" font-family="monospace" font-size="5" font-weight="800" fill="#ffffff" text-anchor="middle">${unitNum}</text>` : ''}
+      ${unitNum ? `<text x="74" y="27" font-family="monospace" font-size="5.5" font-weight="800" fill="#ffffff" text-anchor="middle">${unitNum}</text>` : ''}
     </svg>`;
   }
 
   // DEFAULT / MERCEDES CITARO / CASTROSUA GNC URBANO ESTÁNDAR
   return `
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 36" width="${width}" height="${height}" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.45));">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
     <defs>
       <linearGradient id="stdBody" x1="0%" y1="0%" x2="0%" y2="100%">
         <stop offset="0%" stop-color="#ffffff"/>
@@ -351,7 +348,7 @@ export function getBusSvgIllustration({
     <rect x="22" y="3.5" width="28" height="3" rx="1.5" fill="#38bdf8" stroke="#0284c7" stroke-width="0.5"/>
 
     <!-- Main Bus Body -->
-    <rect x="4" y="6" width="66" height="23" rx="3" fill="url(#stdBody)" stroke="#94a3b8" stroke-width="0.7"/>
+    <rect x="4" y="6" width="66" height="23" rx="3" fill="url(#stdBody)" stroke="#94a3b8" stroke-width="0.8"/>
 
     <!-- Front Windshield -->
     <path d="M5 8 L16 8 L16 18 L5 18 Z" fill="url(#stdGlass)"/>
@@ -372,31 +369,33 @@ export function getBusSvgIllustration({
     <circle cx="56" cy="29" r="2" fill="#cbd5e1"/>
 
     <!-- Line Badge -->
-    <rect x="20" y="8.5" width="22" height="9" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1"/>
-    <text x="31" y="15" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="7.5" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
+    <rect x="20" y="8.5" width="22" height="9.5" rx="3" fill="${cleanColor}" stroke="#ffffff" stroke-width="1.2"/>
+    <text x="31" y="15" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8" font-weight="900" fill="${cleanTextColor}" text-anchor="middle" dominant-baseline="central">${cleanLine}</text>
 
     <!-- Unit ID -->
-    ${unitNum ? `<text x="50" y="27" font-family="monospace" font-size="5" font-weight="800" fill="#ffffff" text-anchor="middle">${unitNum}</text>` : ''}
+    ${unitNum ? `<text x="50" y="27" font-family="monospace" font-size="5.5" font-weight="800" fill="#ffffff" text-anchor="middle">${unitNum}</text>` : ''}
   </svg>`;
 }
 
 /**
- * Creates the HTML wrapper for Leaflet DivIcon
+ * Creates the HTML wrapper for Leaflet DivIcon with compact proportions
  */
 export function getBusMarkerHtml(opts: BusMarkerRenderOptions): string {
   const isArticulated = opts.fleet.isArticulated || opts.fleet.typeKey === 'irizar-ie-tram-articulated' || opts.fleet.typeKey === 'articulated-gnc';
-  const width = isArticulated ? 98 : 72;
-  const height = 36;
+  const width = isArticulated ? 54 : 40;
+  const height = 20;
   const svg = getBusSvgIllustration(opts);
 
   return `
     <div class="bus-custom-marker-wrap" style="
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       width: ${width}px;
       height: ${height}px;
       cursor: pointer;
       transform-origin: center center;
-      transition: transform 0.2s ease-out;
+      transition: transform 0.15s ease-out;
       user-select: none;
     ">
       ${svg}
