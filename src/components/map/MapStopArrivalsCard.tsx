@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle, ChevronDown } from 'lucide-react';
+import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle, ChevronDown, Bus } from 'lucide-react';
 import type { BusStop, StopArrival } from '../../types/bus.ts';
 import { useStopArrivals } from '../../hooks/useStopArrivals.ts';
 
@@ -10,6 +10,7 @@ interface MapStopArrivalsCardProps {
   onToggleFavorite: (stopCode: string) => void;
   onSetAlarm?: (stop: BusStop) => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
+  onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
 }
 
 export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
@@ -19,6 +20,7 @@ export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
   onToggleFavorite,
   onSetAlarm,
   onShareArrival,
+  onStartOnboard,
 }) => {
   const { data, loading, error, refresh } = useStopArrivals(stop.code);
   const [showRoutes, setShowRoutes] = useState(false);
@@ -217,8 +219,21 @@ export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
                     </div>
                   </div>
 
-                  {/* Right: Arrival Time Badge & Share Button */}
+                  {/* Right: Actions & Arrival Time Badge */}
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {onStartOnboard && (
+                      <button
+                        type="button"
+                        onClick={() => onStartOnboard(stop, arr)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-[10px] shadow-2xs transition-all cursor-pointer"
+                        title="Subirme a este bus (Copiloto a bordo)"
+                        aria-label="Subirme a este bus"
+                      >
+                        <Bus className="w-3 h-3" />
+                        <span className="hidden xs:inline">Subirme</span>
+                      </button>
+                    )}
+
                     {onShareArrival && (
                       <button
                         type="button"

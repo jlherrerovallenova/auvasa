@@ -19,6 +19,7 @@ interface MapViewTabProps {
   onToggleFavoriteStop?: (stopCode: string) => void;
   onSetAlarm?: (stop: BusStop) => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
+  onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
   onRequestLocation: () => void;
   onClearRouteFilter: () => void;
 }
@@ -38,6 +39,7 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
   onToggleFavoriteStop,
   onSetAlarm,
   onShareArrival,
+  onStartOnboard,
   onRequestLocation,
   onClearRouteFilter,
 }) => {
@@ -84,6 +86,7 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
             onToggleFavorite={onToggleFavoriteStop || (() => {})}
             onSetAlarm={onSetAlarm}
             onShareArrival={onShareArrival}
+            onStartOnboard={onStartOnboard}
           />
         )}
       </div>

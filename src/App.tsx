@@ -11,6 +11,9 @@ import { DestinationAlarmBanner } from './components/DestinationAlarmBanner.tsx'
 import { SharedArrivalBanner } from './components/SharedArrivalBanner.tsx';
 import { StopArrivalsModal } from './components/StopArrivalsModal.tsx';
 import { ShareArrivalModal } from './components/ShareArrivalModal.tsx';
+import { OnboardSetupModal } from './components/onboard/OnboardSetupModal.tsx';
+import { OnboardDashboardModal } from './components/onboard/OnboardDashboardModal.tsx';
+import { OnboardMiniBar } from './components/onboard/OnboardMiniBar.tsx';
 import { useStops } from './hooks/useStops.ts';
 import { useRoutes } from './hooks/useRoutes.ts';
 import { useRealtime } from './hooks/useRealtime.ts';
@@ -19,6 +22,7 @@ import { useFavorites } from './hooks/useFavorites.ts';
 import { useDestinationAlarm } from './hooks/useDestinationAlarm.ts';
 import { useAlerts } from './hooks/useAlerts.ts';
 import { useTheme } from './hooks/useTheme.ts';
+import { useOnboardTrip } from './hooks/useOnboardTrip.ts';
 import type { BusStop, BusRoute, StopArrival } from './types/bus.ts';
 
 export const App: React.FC = () => {
@@ -71,6 +75,42 @@ export const App: React.FC = () => {
 
   // Live ETA Sharing Modal
   const [sharingData, setSharingData] = useState<{ stop: BusStop; arrival: StopArrival } | null>(null);
+
+  // Modo A Bordo (Copiloto en viaje)
+  const {
+    trip: onboardTrip,
+    metrics: onboardMetrics,
+    isDashboardOpen: isOnboardDashboardOpen,
+    setIsDashboardOpen: setIsOnboardDashboardOpen,
+    isBellActive,
+    startTrip,
+    endTrip,
+    setDestinationStop: setOnboardDestinationStop,
+    advanceToNextStop,
+    rewindToPrevStop,
+    toggleMute: toggleOnboardMute,
+    ringBell,
+  } = useOnboardTrip(vehicles);
+
+  const [onboardSetup, setOnboardSetup] = useState<{
+    route: BusRoute;
+    originStop: BusStop;
+    vehicleId?: string | null;
+  } | null>(null);
+
+  const handleStartOnboardFromArrival = useCallback(
+    (stop: BusStop, arr: StopArrival) => {
+      const route = routeMapById.get(arr.routeShortName) || routeMapById.get(arr.routeShortName.toUpperCase());
+      if (route) {
+        setOnboardSetup({
+          route,
+          originStop: stop,
+          vehicleId: arr.vehicleId,
+        });
+      }
+    },
+    [routeMapById]
+  );
 
   // Shared arrival URL payload (?share=1&line=...&stop=...&eta=...)
   const [sharedArrivalBanner, setSharedArrivalBanner] = useState<{ line: string; stop: string; eta: string } | null>(() => {
@@ -165,6 +205,8 @@ export const App: React.FC = () => {
         alertsCount={alerts.length}
         theme={theme}
         onToggleTheme={toggleTheme}
+        activeTrip={onboardTrip}
+        onOpenOnboard={() => setIsOnboardDashboardOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -249,6 +291,7 @@ export const App: React.FC = () => {
             onToggleFavoriteStop={toggleFavoriteStop}
             onSetAlarm={setAlarmForStop}
             onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
+            onStartOnboard={handleStartOnboardFromArrival}
             onRequestLocation={requestLocation}
             onClearRouteFilter={() => setSelectedRoute(null)}
           />
@@ -304,6 +347,7 @@ export const App: React.FC = () => {
         onViewOnMap={handleViewStopOnMap}
         onSetAlarm={setAlarmForStop}
         onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
+        onStartOnboard={handleStartOnboardFromArrival}
       />
 
       {/* Live ETA Sharing Modal */}
@@ -313,6 +357,42 @@ export const App: React.FC = () => {
           onClose={() => setSharingData(null)}
           stop={sharingData.stop}
           arrival={sharingData.arrival}
+        />
+      )}
+
+      {/* Onboard Setup Modal (Choose destination stop when boarding) */}
+      {onboardSetup && (
+        <OnboardSetupModal
+          isOpen={Boolean(onboardSetup)}
+          onClose={() => setOnboardSetup(null)}
+          route={onboardSetup.route}
+          originStop={onboardSetup.originStop}
+          vehicleId={onboardSetup.vehicleId}
+          onConfirmTrip={startTrip}
+        />
+      )}
+
+      {/* Onboard Dashboard Full HUD Modal */}
+      <OnboardDashboardModal
+        isOpen={isOnboardDashboardOpen}
+        onClose={() => setIsOnboardDashboardOpen(false)}
+        onEndTrip={endTrip}
+        trip={onboardTrip}
+        metrics={onboardMetrics}
+        isBellActive={isBellActive}
+        onRingBell={ringBell}
+        onAdvanceStop={advanceToNextStop}
+        onRewindStop={rewindToPrevStop}
+        onToggleMute={toggleOnboardMute}
+        onSelectDestination={setOnboardDestinationStop}
+      />
+
+      {/* Onboard Minimized Floating Bottom Bar */}
+      {onboardTrip && !isOnboardDashboardOpen && (
+        <OnboardMiniBar
+          trip={onboardTrip}
+          metrics={onboardMetrics}
+          onExpand={() => setIsOnboardDashboardOpen(true)}
         />
       )}
     </div>

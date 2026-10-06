@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Share2, Zap, Accessibility, ChevronDown } from 'lucide-react';
+import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Share2, Zap, Accessibility, ChevronDown, Bus } from 'lucide-react';
 import type { BusStop, StopArrival } from '../types/bus.ts';
 import { useStopArrivals } from '../hooks/useStopArrivals.ts';
 import { getBusFleetInfo, parseOccupancy } from '../utils/fleet.ts';
@@ -12,21 +12,23 @@ interface StopArrivalsModalProps {
   onViewOnMap: (stop: BusStop) => void;
   onSetAlarm?: (stop: BusStop) => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
+  onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
 }
 
 interface ArrivalItemProps {
   arr: StopArrival;
   stop: BusStop;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
+  onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
 }
 
-const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival }) => {
+const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, onStartOnboard }) => {
   const isArriving = arr.minutesRemaining <= 0;
   const fleet = getBusFleetInfo(arr.vehicleId);
   const occupancy = parseOccupancy(arr.occupancy);
 
   return (
-    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/70 transition-colors space-y-2 shadow-sm dark:shadow-md">
+    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/70 transition-colors space-y-2.5 shadow-sm dark:shadow-md">
       <div className="flex items-center justify-between gap-2.5">
         {/* Left: Line and Destination */}
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
@@ -61,42 +63,28 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival }) 
           </div>
         </div>
 
-        {/* Right: Arrival Time Badge & Share Button */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {onShareArrival && (
-            <button
-              type="button"
-              onClick={() => onShareArrival(stop, arr)}
-              className="p-2 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-750 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer shrink-0"
-              title="Compartir hora de llegada"
-              aria-label="Compartir hora de llegada"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-          )}
-
-          <div className="text-right shrink-0">
-            <div
-              className={`inline-flex items-center px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-sm ${
-                isArriving
-                  ? 'bg-emerald-500 text-slate-950 animate-pulse font-extrabold'
-                  : arr.isRealtime
-                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                  : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-              }`}
-            >
-              {isArriving ? 'Llegando' : `${arr.minutesRemaining} min`}
-            </div>
-            <div className="text-[10px] text-slate-500 mt-1 font-mono">
-              Hora: {arr.exactTime}
-            </div>
+        {/* Right: Arrival Time Badge */}
+        <div className="text-right shrink-0">
+          <div
+            className={`inline-flex items-center px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-sm ${
+              isArriving
+                ? 'bg-emerald-500 text-slate-950 animate-pulse font-extrabold'
+                : arr.isRealtime
+                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+            }`}
+          >
+            {isArriving ? 'Llegando' : `${arr.minutesRemaining} min`}
+          </div>
+          <div className="text-[10px] text-slate-500 mt-1 font-mono">
+            Hora: {arr.exactTime}
           </div>
         </div>
       </div>
 
       {/* Fleet and Occupancy Radar Badges */}
       {arr.isRealtime && (
-        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-750/70 text-[10px]">
+        <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-200/80 dark:border-slate-750/70 text-[10px]">
           <span className={`px-2 py-0.5 rounded-md font-medium border ${occupancy.bgClass} ${occupancy.colorClass}`}>
             {occupancy.label}
           </span>
@@ -114,6 +102,33 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival }) 
           )}
         </div>
       )}
+
+      {/* Action Row: Onboard Companion Mode & Share */}
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-750/70">
+        {onStartOnboard ? (
+          <button
+            type="button"
+            onClick={() => onStartOnboard(stop, arr)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-sm transition-all transform active:scale-95 cursor-pointer"
+            title="Activar avisos y copiloto a bordo"
+          >
+            <Bus className="w-3.5 h-3.5" />
+            <span>Subirme a este bus</span>
+          </button>
+        ) : <div />}
+
+        {onShareArrival && (
+          <button
+            type="button"
+            onClick={() => onShareArrival(stop, arr)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-750 text-xs font-semibold transition-colors cursor-pointer"
+            title="Compartir hora de llegada"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span>Compartir</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -125,6 +140,7 @@ interface StopArrivalsBodyProps {
   refresh: () => void;
   stop: BusStop;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
+  onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
 }
 
 const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
@@ -134,6 +150,7 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
   refresh,
   stop,
   onShareArrival,
+  onStartOnboard,
 }) => {
   return (
     <div className="p-5 overflow-y-auto flex-1 space-y-3">
@@ -192,6 +209,7 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
                 arr={arr}
                 stop={stop}
                 onShareArrival={onShareArrival}
+                onStartOnboard={onStartOnboard}
               />
             );
           })}
@@ -209,6 +227,7 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
   onViewOnMap,
   onSetAlarm,
   onShareArrival,
+  onStartOnboard,
 }) => {
   const { data, loading, error, refresh } = useStopArrivals(stop?.code || null);
   const [showRoutes, setShowRoutes] = useState(false);
@@ -312,6 +331,7 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
           refresh={refresh}
           stop={stop}
           onShareArrival={onShareArrival}
+          onStartOnboard={onStartOnboard}
         />
 
         {/* Modal Footer */}

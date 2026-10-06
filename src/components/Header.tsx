@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bus, Star, AlertCircle, Compass, Search, Route, Hash, Sun, Moon, MoreHorizontal, X, ChevronRight } from 'lucide-react';
 import type { Theme } from '../hooks/useTheme.ts';
+import type { OnboardTrip } from '../types/onboard.ts';
 
 export type ActiveTab = 'search' | 'routes' | 'lines' | 'map' | 'marquesina' | 'favorites' | 'alerts';
 
@@ -11,6 +12,8 @@ interface HeaderProps {
   alertsCount: number;
   theme: Theme;
   onToggleTheme: () => void;
+  activeTrip?: OnboardTrip | null;
+  onOpenOnboard?: () => void;
 }
 
 interface NavItemDef {
@@ -145,6 +148,8 @@ export const Header: React.FC<HeaderProps> = ({
   alertsCount,
   theme,
   onToggleTheme,
+  activeTrip,
+  onOpenOnboard,
 }) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
@@ -187,6 +192,20 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Right Controls: Theme Toggle & Live Indicator Pill */}
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {/* Active Trip Onboard Pill */}
+              {activeTrip && onOpenOnboard && (
+                <button
+                  type="button"
+                  onClick={onOpenOnboard}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold shadow-md shadow-teal-600/30 transition-transform active:scale-95 cursor-pointer shrink-0 animate-pulse"
+                  title="Abrir Copiloto A Bordo"
+                >
+                  <Bus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">A Bordo: L{activeTrip.route.shortName}</span>
+                  <span className="sm:hidden">L{activeTrip.route.shortName}</span>
+                </button>
+              )}
+
               {/* Quick Alerts Button (shown on mobile, hidden on desktop where Avisos is already in DesktopNav) */}
               <button
                 type="button"
@@ -285,6 +304,29 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <div className="space-y-2.5">
+              {/* Copiloto A Bordo (Si hay viaje en curso) */}
+              {activeTrip && onOpenOnboard && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenOnboard();
+                    setIsMoreOpen(false);
+                  }}
+                  className="w-full p-3.5 rounded-2xl border text-left flex items-center justify-between gap-3 transition-colors cursor-pointer bg-teal-50 dark:bg-teal-950/60 border-teal-500/80 shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow">
+                      <Bus className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">Copiloto A Bordo (En viaje)</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Viaje activo en Línea {activeTrip.route.shortName} • Toca para abrir</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-teal-600 shrink-0" />
+                </button>
+              )}
+
               {/* 1. Rutas A-B */}
               <button
                 type="button"
