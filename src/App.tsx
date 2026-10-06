@@ -17,6 +17,7 @@ import { useRealtime } from './hooks/useRealtime.ts';
 import { useGeolocation } from './hooks/useGeolocation.ts';
 import { useFavorites } from './hooks/useFavorites.ts';
 import { useDestinationAlarm } from './hooks/useDestinationAlarm.ts';
+import { useAlerts } from './hooks/useAlerts.ts';
 import { useTheme } from './hooks/useTheme.ts';
 import type { BusStop, BusRoute, StopArrival } from './types/bus.ts';
 
@@ -30,6 +31,7 @@ export const App: React.FC = () => {
   const { stops, stopMapByCode } = useStops();
   const { routes, routeMapById, fetchRouteDetail } = useRoutes();
   const { vehicles } = useRealtime();
+  const { alerts } = useAlerts();
   const {
     lat: userLat,
     lon: userLon,
@@ -126,7 +128,7 @@ export const App: React.FC = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         vehiclesCount={vehicles.length}
-        alertsCount={0}
+        alertsCount={alerts.length}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
@@ -163,6 +165,7 @@ export const App: React.FC = () => {
             onSelectStop={handleSelectStop}
             onSelectRouteFromSearch={handleSelectRouteFromSearch}
             onOpenMap={() => setActiveTab('map')}
+            onNavigateTab={setActiveTab}
           />
         )}
 

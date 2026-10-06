@@ -3,7 +3,8 @@ import { SearchBar } from './SearchBar.tsx';
 import { NearbyStops } from './NearbyStops.tsx';
 import { DailyRoutineCard } from './DailyRoutineCard.tsx';
 import type { BusStop, BusRoute } from '../types/bus.ts';
-import { Radio, Compass } from 'lucide-react';
+import type { ActiveTab } from './Header.tsx';
+import { Radio, Compass, Route, Hash, AlertCircle } from 'lucide-react';
 
 interface HomeSearchViewProps {
   stops: BusStop[];
@@ -18,6 +19,7 @@ interface HomeSearchViewProps {
   onSelectStop: (stop: BusStop) => void;
   onSelectRouteFromSearch: (route: BusRoute) => void;
   onOpenMap: () => void;
+  onNavigateTab?: (tab: ActiveTab) => void;
 }
 
 export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
@@ -33,6 +35,7 @@ export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
   onSelectStop,
   onSelectRouteFromSearch,
   onOpenMap,
+  onNavigateTab,
 }) => {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -60,6 +63,47 @@ export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
                 {line.shortName}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Quick Tools Shortcut Row */}
+        {onNavigateTab && (
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            <button
+              type="button"
+              onClick={() => onNavigateTab('routes')}
+              className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-teal-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors cursor-pointer group text-center"
+            >
+              <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                <Route className="w-4 h-4" />
+              </div>
+              <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Rutas A-B</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden xs:inline">Planificar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigateTab('marquesina')}
+              className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-emerald-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors cursor-pointer group text-center"
+            >
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                <Hash className="w-4 h-4" />
+              </div>
+              <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Marquesina</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden xs:inline">Poste rápido</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigateTab('alerts')}
+              className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors cursor-pointer group text-center"
+            >
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Avisos</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden xs:inline">Incidencias</span>
+            </button>
           </div>
         )}
       </div>

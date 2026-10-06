@@ -1,5 +1,5 @@
-import React from 'react';
-import { Bus, Star, AlertCircle, Compass, Search, Route, Hash, Sun, Moon } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bus, Star, AlertCircle, Compass, Search, Route, Hash, Sun, Moon, MoreHorizontal, X, ChevronRight } from 'lucide-react';
 import type { Theme } from '../hooks/useTheme.ts';
 
 export type ActiveTab = 'search' | 'routes' | 'lines' | 'map' | 'marquesina' | 'favorites' | 'alerts';
@@ -16,19 +16,24 @@ interface HeaderProps {
 interface NavItemDef {
   id: ActiveTab;
   label: string;
-  mobileLabel: string;
   icon: React.ComponentType<{ className?: string }>;
-  showOnMobile: boolean;
 }
 
-const NAV_ITEMS: NavItemDef[] = [
-  { id: 'search', label: 'Buscador', mobileLabel: 'Buscar', icon: Search, showOnMobile: true },
-  { id: 'routes', label: 'Rutas A-B', mobileLabel: 'Rutas', icon: Route, showOnMobile: true },
-  { id: 'lines', label: 'Líneas', mobileLabel: 'Líneas', icon: Bus, showOnMobile: true },
-  { id: 'map', label: 'Mapa en Vivo', mobileLabel: 'Mapa', icon: Compass, showOnMobile: true },
-  { id: 'marquesina', label: 'Marquesina', mobileLabel: 'Marquesina', icon: Hash, showOnMobile: true },
-  { id: 'favorites', label: 'Favoritos', mobileLabel: 'Favoritos', icon: Star, showOnMobile: true },
-  { id: 'alerts', label: 'Avisos', mobileLabel: 'Avisos', icon: AlertCircle, showOnMobile: false },
+const DESKTOP_NAV_ITEMS: NavItemDef[] = [
+  { id: 'search', label: 'Buscador', icon: Search },
+  { id: 'routes', label: 'Rutas A-B', icon: Route },
+  { id: 'lines', label: 'Líneas', icon: Bus },
+  { id: 'map', label: 'Mapa en Vivo', icon: Compass },
+  { id: 'marquesina', label: 'Marquesina', icon: Hash },
+  { id: 'favorites', label: 'Favoritos', icon: Star },
+  { id: 'alerts', label: 'Avisos', icon: AlertCircle },
+];
+
+const MAIN_MOBILE_TABS = [
+  { id: 'search' as const, label: 'Buscar', icon: Search },
+  { id: 'lines' as const, label: 'Líneas', icon: Bus },
+  { id: 'map' as const, label: 'Mapa', icon: Compass },
+  { id: 'favorites' as const, label: 'Favoritos', icon: Star },
 ];
 
 interface DesktopNavProps {
@@ -39,7 +44,7 @@ interface DesktopNavProps {
 
 const DesktopNav: React.FC<DesktopNavProps> = ({ activeTab, alertsCount, onTabChange }) => (
   <nav className="hidden lg:flex items-center gap-1" aria-label="Navegación principal">
-    {NAV_ITEMS.map(item => {
+    {DESKTOP_NAV_ITEMS.map(item => {
       const Icon = item.icon;
       const isActive = activeTab === item.id;
       return (
@@ -66,37 +71,68 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ activeTab, alertsCount, onTabCh
 
 interface MobileNavProps {
   activeTab: ActiveTab;
+  alertsCount: number;
   onTabChange: (tab: ActiveTab) => void;
+  onOpenMore: () => void;
 }
 
-const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) => (
-  <nav
-    className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800/80 px-1 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom,0px))] flex justify-between items-center"
-    aria-label="Navegación móvil"
-  >
-    {NAV_ITEMS.filter(item => item.showOnMobile).map(item => {
-      const Icon = item.icon;
-      const isActive = activeTab === item.id;
-      return (
-        <button
-          key={item.id}
-          type="button"
-          onClick={() => onTabChange(item.id)}
-          className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl text-[10px] sm:text-[11px] font-medium transition-colors ${
-            isActive
-              ? 'text-teal-600 dark:text-teal-400 font-bold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-          }`}
-        >
-          <Icon className="w-4 h-4 shrink-0" />
-          <span className="truncate max-w-[56px] text-center tracking-tight leading-none mt-0.5">
-            {item.mobileLabel}
-          </span>
-        </button>
-      );
-    })}
-  </nav>
-);
+const MobileNav: React.FC<MobileNavProps> = ({ activeTab, alertsCount, onTabChange, onOpenMore }) => {
+  const isSubTabActive = activeTab === 'routes' || activeTab === 'marquesina' || activeTab === 'alerts';
+
+  // Dynamic label & icon for 5th tab
+  const FifthIcon = activeTab === 'routes' ? Route : activeTab === 'marquesina' ? Hash : activeTab === 'alerts' ? AlertCircle : MoreHorizontal;
+  const fifthLabel = activeTab === 'routes' ? 'Rutas' : activeTab === 'marquesina' ? 'Marques.' : activeTab === 'alerts' ? 'Avisos' : 'Más';
+
+  return (
+    <nav
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800/80 px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom,0px))] flex items-center justify-between"
+      aria-label="Navegación móvil"
+    >
+      {MAIN_MOBILE_TABS.map(item => {
+        const Icon = item.icon;
+        const isActive = activeTab === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onTabChange(item.id)}
+            className={`flex-1 min-w-0 max-w-[20%] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl text-[10px] sm:text-[11px] font-medium transition-colors ${
+              isActive
+                ? 'text-teal-600 dark:text-teal-400 font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Icon className="w-5 h-5 shrink-0" />
+            <span className="truncate max-w-[60px] text-center tracking-tight leading-none mt-1">
+              {item.label}
+            </span>
+          </button>
+        );
+      })}
+
+      {/* 5th Tab: "Más" / Subtab */}
+      <button
+        type="button"
+        onClick={onOpenMore}
+        className={`flex-1 min-w-0 max-w-[20%] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl text-[10px] sm:text-[11px] font-medium transition-colors relative ${
+          isSubTabActive
+            ? 'text-teal-600 dark:text-teal-400 font-bold'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+        }`}
+      >
+        <div className="relative">
+          <FifthIcon className="w-5 h-5 shrink-0" />
+          {alertsCount > 0 && (
+            <span className="w-2 h-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5 animate-pulse" />
+          )}
+        </div>
+        <span className="truncate max-w-[60px] text-center tracking-tight leading-none mt-1">
+          {fifthLabel}
+        </span>
+      </button>
+    </nav>
+  );
+};
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
@@ -106,6 +142,8 @@ export const Header: React.FC<HeaderProps> = ({
   theme,
   onToggleTheme,
 }) => {
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -142,8 +180,27 @@ export const Header: React.FC<HeaderProps> = ({
             onTabChange={onTabChange}
           />
 
-          {/* Right Controls: Theme Toggle & Live Indicator Pill */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Right Controls: Alerts Button, Theme Toggle & Live Indicator Pill */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Quick Alerts Button */}
+            <button
+              type="button"
+              onClick={() => onTabChange('alerts')}
+              className={`p-2 rounded-xl transition-colors cursor-pointer shadow-sm flex items-center justify-center shrink-0 relative ${
+                activeTab === 'alerts'
+                  ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/80'
+              }`}
+              aria-label="Ver avisos e incidencias"
+              title="Avisos e incidencias de tráfico"
+            >
+              <AlertCircle className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+              {alertsCount > 0 && (
+                <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-1.5 animate-pulse" />
+              )}
+            </button>
+
+            {/* Theme Toggle */}
             <button
               type="button"
               onClick={onToggleTheme}
@@ -158,6 +215,7 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
+            {/* Realtime Buses Pill */}
             <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 dark:text-slate-300 shadow-inner shrink-0">
               <span className="relative flex h-2.5 w-2.5 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -173,8 +231,138 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      <MobileNav activeTab={activeTab} onTabChange={onTabChange} />
+      {/* Mobile Bottom Navigation (5 Clean Tabs) */}
+      <MobileNav
+        activeTab={activeTab}
+        alertsCount={alertsCount}
+        onTabChange={onTabChange}
+        onOpenMore={() => setIsMoreOpen(true)}
+      />
+
+      {/* iOS Style "Más" Bottom Sheet Modal */}
+      {isMoreOpen && (
+        <dialog
+          open
+          aria-labelledby="more-menu-title"
+          className="fixed inset-0 z-50 m-0 p-0 w-full h-full max-w-none max-h-none bg-transparent flex items-end justify-center border-none text-slate-800 dark:text-slate-100"
+        >
+          {/* Accessible Backdrop */}
+          <button
+            type="button"
+            aria-label="Cerrar modal"
+            className="fixed inset-0 w-full h-full bg-black/60 dark:bg-black/75 backdrop-blur-sm cursor-default border-none p-0"
+            onClick={() => setIsMoreOpen(false)}
+          />
+
+          <div className="relative z-10 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl w-full max-w-lg p-5 shadow-2xl flex flex-col space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] animate-in slide-in-from-bottom duration-200 text-slate-800 dark:text-slate-100">
+            {/* Handle bar */}
+            <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto -mt-1 mb-1" />
+
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 id="more-menu-title" className="text-lg font-bold text-slate-900 dark:text-white">
+                  Más Opciones
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Herramientas y servicios de VallaBus
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMoreOpen(false)}
+                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                aria-label="Cerrar menú"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {/* 1. Rutas A-B */}
+              <button
+                type="button"
+                onClick={() => {
+                  onTabChange('routes');
+                  setIsMoreOpen(false);
+                }}
+                className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between gap-3 transition-colors cursor-pointer ${
+                  activeTab === 'routes'
+                    ? 'bg-teal-50 dark:bg-teal-950/60 border-teal-500/80 shadow-sm'
+                    : 'bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700/80'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                    <Route className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Rutas A-B</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Planificador con transbordos y tiempos en directo</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+              </button>
+
+              {/* 2. Marquesina Rápida */}
+              <button
+                type="button"
+                onClick={() => {
+                  onTabChange('marquesina');
+                  setIsMoreOpen(false);
+                }}
+                className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between gap-3 transition-colors cursor-pointer ${
+                  activeTab === 'marquesina'
+                    ? 'bg-teal-50 dark:bg-teal-950/60 border-teal-500/80 shadow-sm'
+                    : 'bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700/80'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <Hash className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Marquesina / Poste</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Teclado numérico táctil de una mano para paradas</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+              </button>
+
+              {/* 3. Avisos e Incidencias */}
+              <button
+                type="button"
+                onClick={() => {
+                  onTabChange('alerts');
+                  setIsMoreOpen(false);
+                }}
+                className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between gap-3 transition-colors cursor-pointer relative ${
+                  activeTab === 'alerts'
+                    ? 'bg-teal-50 dark:bg-teal-950/60 border-teal-500/80 shadow-sm'
+                    : 'bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700/80'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <AlertCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">Avisos e Incidencias</h4>
+                      {alertsCount > 0 && (
+                        <span className="bg-amber-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                          {alertsCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Cortes de tráfico, desvíos y alteraciones AUVASA</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+              </button>
+            </div>
+          </div>
+        </dialog>
+      )}
     </header>
   );
 };
