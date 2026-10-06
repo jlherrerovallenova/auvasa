@@ -6,7 +6,7 @@ export const AlertsView: React.FC = () => {
   const { alerts, loading, refresh } = useAlerts();
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6 pt-1 sm:pt-2">
       <div className="flex items-center justify-between px-1">
         <div>
           <h3 className="text-xl font-bold text-slate-900 dark:text-white">Avisos e Incidencias AUVASA</h3>

@@ -20,10 +20,10 @@ interface NavItemDef {
 }
 
 const DESKTOP_NAV_ITEMS: NavItemDef[] = [
-  { id: 'search', label: 'Buscador', icon: Search },
-  { id: 'routes', label: 'Rutas A-B', icon: Route },
+  { id: 'search', label: 'Buscar', icon: Search },
+  { id: 'routes', label: 'Rutas', icon: Route },
   { id: 'lines', label: 'Líneas', icon: Bus },
-  { id: 'map', label: 'Mapa en Vivo', icon: Compass },
+  { id: 'map', label: 'Mapa', icon: Compass },
   { id: 'marquesina', label: 'Marquesina', icon: Hash },
   { id: 'favorites', label: 'Favoritos', icon: Star },
   { id: 'alerts', label: 'Avisos', icon: AlertCircle },
@@ -43,7 +43,7 @@ interface DesktopNavProps {
 }
 
 const DesktopNav: React.FC<DesktopNavProps> = ({ activeTab, alertsCount, onTabChange }) => (
-  <nav className="hidden lg:flex items-center gap-1" aria-label="Navegación principal">
+  <nav className="hidden md:flex items-center gap-1 xl:gap-1.5" aria-label="Navegación principal">
     {DESKTOP_NAV_ITEMS.map(item => {
       const Icon = item.icon;
       const isActive = activeTab === item.id;
@@ -52,13 +52,13 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ activeTab, alertsCount, onTabCh
           key={item.id}
           type="button"
           onClick={() => onTabChange(item.id)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer relative ${
+          className={`flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer relative shrink-0 ${
             isActive
               ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30'
               : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80'
           }`}
         >
-          <Icon className="w-3.5 h-3.5" />
+          <Icon className="w-3.5 h-3.5 shrink-0" />
           <span>{item.label}</span>
           {item.id === 'alerts' && alertsCount > 0 && (
             <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-1.5" />
@@ -85,7 +85,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ activeTab, alertsCount, onTabChan
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800/80 px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom,0px))] flex items-center justify-between"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800/80 px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom,0px))] flex items-center justify-between"
       aria-label="Navegación móvil"
     >
       {MAIN_MOBILE_TABS.map(item => {
@@ -167,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({
                   AUVASA RT
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
+              <p className="text-xs text-slate-500 dark:text-slate-400 hidden xl:block">
                 Red de Autobuses de Valladolid
               </p>
             </div>
@@ -244,19 +244,19 @@ export const Header: React.FC<HeaderProps> = ({
         <dialog
           open
           aria-labelledby="more-menu-title"
-          className="fixed inset-0 z-50 m-0 p-0 w-full h-full max-w-none max-h-none bg-transparent flex items-end justify-center border-none text-slate-800 dark:text-slate-100"
+          className="fixed inset-0 z-50 m-0 p-0 w-full h-full h-[100dvh] max-w-none max-h-none bg-black/60 dark:bg-black/75 backdrop-blur-sm flex flex-col justify-end items-center border-none overflow-hidden text-slate-800 dark:text-slate-100"
         >
-          {/* Accessible Backdrop */}
+          {/* Accessible Backdrop Button (fills upper space, closes on tap) */}
           <button
             type="button"
             aria-label="Cerrar modal"
-            className="fixed inset-0 w-full h-full bg-black/60 dark:bg-black/75 backdrop-blur-sm cursor-default border-none p-0"
+            className="w-full flex-1 cursor-default border-none p-0 bg-transparent shrink-0"
             onClick={() => setIsMoreOpen(false)}
           />
 
-          <div className="relative z-10 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl w-full max-w-lg p-5 shadow-2xl flex flex-col space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] animate-in slide-in-from-bottom duration-200 text-slate-800 dark:text-slate-100">
+          <div className="relative z-10 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl w-full max-w-lg p-5 shadow-2xl flex flex-col space-y-4 max-h-[85dvh] overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] shrink-0 animate-in slide-in-from-bottom duration-200 text-slate-800 dark:text-slate-100">
             {/* Handle bar */}
-            <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto -mt-1 mb-1" />
+            <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto -mt-1 mb-1 shrink-0" />
 
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div>

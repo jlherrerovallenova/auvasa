@@ -115,6 +115,11 @@ export const App: React.FC = () => {
     setActiveTab('map');
   }, []);
 
+  const handleTabChange = useCallback((tab: ActiveTab) => {
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   // Quick popular lines for Valladolid
   const popularLines = useMemo(() => {
     const popularKeys = ['1', '2', '7', '9', '18', '19'];
@@ -128,7 +133,7 @@ export const App: React.FC = () => {
       {/* Top Navbar */}
       <Header
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         vehiclesCount={vehicles.length}
         alertsCount={alerts.length}
         theme={theme}
@@ -167,7 +172,7 @@ export const App: React.FC = () => {
             onSelectStop={handleSelectStop}
             onSelectRouteFromSearch={handleSelectRouteFromSearch}
             onOpenMap={() => setActiveTab('map')}
-            onNavigateTab={setActiveTab}
+            onNavigateTab={handleTabChange}
           />
         )}
 
