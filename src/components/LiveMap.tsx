@@ -34,6 +34,9 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   const [vehiclesLayer, setVehiclesLayer] = useState<L.LayerGroup | null>(null);
   const [stopsLayer, setStopsLayer] = useState<L.LayerGroup | null>(null);
   const [showStops, setShowStops] = useState(true);
+  const [mapTheme, setMapTheme] = useState<'dark' | 'streets'>('dark');
+
+  const baseTilesRef = useRef<L.LayerGroup | null>(null);
 
   // Initialize Leaflet map
   useEffect(() => {
@@ -45,11 +48,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
       zoomControl: false,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-      subdomains: 'abcd',
-      maxZoom: 19,
-    }).addTo(map);
+    baseTilesRef.current = L.layerGroup().addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -67,6 +66,45 @@ export const LiveMap: React.FC<LiveMapProps> = ({
       setStopsLayer(null);
     };
   }, []);
+
+  // Update Tile Layers when mapTheme changes (No watermarks, fast CloudFront / OSM)
+  useEffect(() => {
+    const tileGroup = baseTilesRef.current;
+    if (!tileGroup) return;
+
+    tileGroup.clearLayers();
+
+    if (mapTheme === 'dark') {
+      const baseDark = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        {
+          attribution: '&copy; Esri &copy; OpenStreetMap contributors',
+          maxZoom: 18,
+        }
+      );
+      const labelsDark = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+        {
+          maxZoom: 18,
+        }
+      );
+      tileGroup.addLayer(baseDark);
+      tileGroup.addLayer(labelsDark);
+    } else {
+      const streets = L.tileLayer(
+        'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+        {
+          attribution: '&copy; OpenStreetMap contributors, OpenStreetMap France',
+          maxZoom: 19,
+        }
+      );
+      tileGroup.addLayer(streets);
+    }
+
+    return () => {
+      tileGroup.clearLayers();
+    };
+  }, [mapTheme, mapInstance]);
 
   // Hook managing dynamic map layers and subscriptions with cleanup
   useMapLayers({
@@ -104,6 +142,10 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     }
   }, [userLat, userLon, mapInstance, onRequestLocation]);
 
+  const handleToggleTheme = useCallback(() => {
+    setMapTheme(prev => (prev === 'dark' ? 'streets' : 'dark'));
+  }, []);
+
   return (
     <div className="relative w-full h-full min-h-[500px] flex-1 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full z-10" />
@@ -111,7 +153,9 @@ export const LiveMap: React.FC<LiveMapProps> = ({
       {/* Floating Map Controls */}
       <MapControls
         showStops={showStops}
+        mapTheme={mapTheme}
         onToggleStops={() => setShowStops(prev => !prev)}
+        onToggleMapTheme={handleToggleTheme}
         onLocateMe={handleLocateMe}
         onCenterValladolid={handleCenterValladolid}
       />

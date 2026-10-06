@@ -1,16 +1,20 @@
 import React from 'react';
-import { Locate, RotateCcw, Layers } from 'lucide-react';
+import { Locate, RotateCcw, Layers, Sun, Moon } from 'lucide-react';
 
 interface MapControlsProps {
   showStops: boolean;
+  mapTheme: 'dark' | 'streets';
   onToggleStops: () => void;
+  onToggleMapTheme: () => void;
   onLocateMe: () => void;
   onCenterValladolid: () => void;
 }
 
 export const MapControls: React.FC<MapControlsProps> = ({
   showStops,
+  mapTheme,
   onToggleStops,
+  onToggleMapTheme,
   onLocateMe,
   onCenterValladolid,
 }) => {
@@ -48,6 +52,16 @@ export const MapControls: React.FC<MapControlsProps> = ({
         aria-label="Alternar visualización de paradas"
       >
         <Layers className="w-4 h-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={onToggleMapTheme}
+        className="w-10 h-10 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-400 border border-slate-700/80 flex items-center justify-center shadow-lg backdrop-blur-md transition-colors active:scale-95 cursor-pointer"
+        title={mapTheme === 'dark' ? 'Cambiar a mapa de calles claras' : 'Cambiar a mapa oscuro'}
+        aria-label="Cambiar estilo de mapa"
+      >
+        {mapTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
     </div>
   );
