@@ -111,8 +111,8 @@ export function useMapLayers({
       const occupancy = parseOccupancy(v.occupancy);
 
       const isArticulated = fleet.isArticulated || fleet.typeKey === 'irizar-ie-tram-articulated' || fleet.typeKey === 'articulated-gnc';
-      const markerWidth = isArticulated ? 54 : 40;
-      const markerHeight = 20;
+      const markerWidth = isArticulated ? 62 : 46;
+      const markerHeight = 26;
 
       const markerHtml = getBusMarkerHtml({
         fleet,
