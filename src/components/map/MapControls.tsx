@@ -23,7 +23,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
       <button
         type="button"
         onClick={onLocateMe}
-        className="w-10 h-10 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-teal-400 border border-slate-700/80 flex items-center justify-center shadow-lg backdrop-blur-md transition-colors active:scale-95 cursor-pointer"
+        className="w-10 h-10 rounded-xl bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 text-teal-600 dark:text-teal-400 border border-slate-200 dark:border-slate-700/80 flex items-center justify-center shadow-lg backdrop-blur-md transition-colors active:scale-95 cursor-pointer"
         title="Mi Ubicación"
         aria-label="Ir a mi ubicación GPS"
       >
@@ -33,7 +33,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
       <button
         type="button"
         onClick={onCenterValladolid}
-        className="w-10 h-10 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-700/80 flex items-center justify-center shadow-lg backdrop-blur-md transition-colors active:scale-95 cursor-pointer"
+        className="w-10 h-10 rounded-xl bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/80 flex items-center justify-center shadow-lg backdrop-blur-md transition-colors active:scale-95 cursor-pointer"
         title="Centrar en Valladolid"
         aria-label="Centrar mapa en Valladolid"
       >
@@ -45,8 +45,8 @@ export const MapControls: React.FC<MapControlsProps> = ({
         onClick={onToggleStops}
         className={`w-10 h-10 rounded-xl border flex items-center justify-center shadow-lg backdrop-blur-md transition-colors active:scale-95 cursor-pointer ${
           showStops
-            ? 'bg-teal-600/90 text-white border-teal-500'
-            : 'bg-slate-900/90 text-slate-400 border-slate-700/80 hover:text-white'
+            ? 'bg-teal-600 text-white border-teal-500 shadow-teal-700/20'
+            : 'bg-white/90 dark:bg-slate-900/90 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700/80 hover:text-slate-900 dark:hover:text-white'
         }`}
         title={showStops ? 'Ocultar Paradas' : 'Mostrar Paradas'}
         aria-label="Alternar visualización de paradas"
@@ -57,7 +57,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
       <button
         type="button"
         onClick={onToggleMapTheme}
-        className="w-10 h-10 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-400 border border-slate-700/80 flex items-center justify-center shadow-lg backdrop-blur-md transition-colors active:scale-95 cursor-pointer"
+        className="w-10 h-10 rounded-xl bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 text-amber-500 dark:text-amber-400 border border-slate-200 dark:border-slate-700/80 flex items-center justify-center shadow-lg backdrop-blur-md transition-colors active:scale-95 cursor-pointer"
         title={mapTheme === 'dark' ? 'Cambiar a mapa de calles claras' : 'Cambiar a mapa oscuro'}
         aria-label="Cambiar estilo de mapa"
       >

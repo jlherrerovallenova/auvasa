@@ -48,24 +48,24 @@ export const MarquesinaDial: React.FC<MarquesinaDialProps> = ({
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 shadow-2xl max-w-md mx-auto">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xl dark:shadow-2xl max-w-md mx-auto transition-colors">
       <div className="text-center mb-4">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-400 text-xs font-bold mb-2">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/30 text-teal-700 dark:text-teal-400 text-xs font-bold mb-2">
           <Hash className="w-3.5 h-3.5" />
           <span>Modo Marquesina Rápida</span>
         </div>
-        <h3 className="text-lg font-bold text-white">Marca el Código de Parada</h3>
-        <p className="text-xs text-slate-400">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Marca el Código de Parada</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Usa el teclado numérico para consultar los tiempos de tu poste o marquesina con una sola mano.
         </p>
       </div>
 
       {/* Code Display Screen */}
-      <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4 flex items-center justify-between shadow-inner">
+      <div className="bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 mb-4 flex items-center justify-between shadow-inner transition-colors">
         <div className="flex items-center gap-2">
-          <span className="text-slate-500 font-mono text-xl font-bold">#</span>
-          <span className="font-mono text-3xl font-black tracking-widest text-teal-300 min-h-[36px]">
-            {code || <span className="text-slate-600 animate-pulse">____</span>}
+          <span className="text-slate-400 dark:text-slate-500 font-mono text-xl font-bold">#</span>
+          <span className="font-mono text-3xl font-black tracking-widest text-teal-600 dark:text-teal-300 min-h-[36px]">
+            {code || <span className="text-slate-400 dark:text-slate-600 animate-pulse">____</span>}
           </span>
         </div>
 
@@ -73,7 +73,7 @@ export const MarquesinaDial: React.FC<MarquesinaDialProps> = ({
           <button
             type="button"
             onClick={handleClear}
-            className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-800 transition-colors cursor-pointer"
+            className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-2 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 transition-colors cursor-pointer"
           >
             Borrar todo
           </button>
@@ -91,15 +91,15 @@ export const MarquesinaDial: React.FC<MarquesinaDialProps> = ({
                 onSelectStop(s);
                 setCode('');
               }}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/80 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-left transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="font-mono text-xs font-bold text-teal-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                <span className="font-mono text-xs font-bold text-teal-700 dark:text-teal-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                   #{s.code}
                 </span>
-                <span className="text-xs font-semibold text-white truncate">{s.name}</span>
+                <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">{s.name}</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" />
+              <ArrowRight className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 flex-shrink-0" />
             </button>
           ))}
         </div>
@@ -112,7 +112,7 @@ export const MarquesinaDial: React.FC<MarquesinaDialProps> = ({
             key={digit}
             type="button"
             onClick={() => handleDigit(digit)}
-            className="h-14 rounded-2xl bg-slate-800/90 hover:bg-slate-750 active:bg-slate-700 border border-slate-700/80 text-white font-mono font-bold text-2xl transition-colors shadow-md active:scale-95 cursor-pointer flex items-center justify-center"
+            className="h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 dark:bg-slate-800/90 dark:hover:bg-slate-750 dark:active:bg-slate-700 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-white font-mono font-bold text-2xl transition-colors shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
           >
             {digit}
           </button>
@@ -121,7 +121,7 @@ export const MarquesinaDial: React.FC<MarquesinaDialProps> = ({
         <button
           type="button"
           onClick={handleDelete}
-          className="h-14 rounded-2xl bg-slate-850 hover:bg-slate-800 active:bg-slate-750 border border-slate-700/80 text-rose-400 font-bold transition-colors shadow-md active:scale-95 cursor-pointer flex items-center justify-center"
+          className="h-14 rounded-2xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 dark:bg-slate-850 dark:hover:bg-slate-800 dark:active:bg-slate-750 border border-rose-200 dark:border-slate-700/80 text-rose-500 dark:text-rose-400 font-bold transition-colors shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
           aria-label="Borrar último dígito"
         >
           <Delete className="w-6 h-6" />
@@ -130,7 +130,7 @@ export const MarquesinaDial: React.FC<MarquesinaDialProps> = ({
         <button
           type="button"
           onClick={() => handleDigit('0')}
-          className="h-14 rounded-2xl bg-slate-800/90 hover:bg-slate-750 active:bg-slate-700 border border-slate-700/80 text-white font-mono font-bold text-2xl transition-colors shadow-md active:scale-95 cursor-pointer flex items-center justify-center"
+          className="h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 dark:bg-slate-800/90 dark:hover:bg-slate-750 dark:active:bg-slate-700 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-white font-mono font-bold text-2xl transition-colors shadow-sm active:scale-95 cursor-pointer flex items-center justify-center"
         >
           0
         </button>

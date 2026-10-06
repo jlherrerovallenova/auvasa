@@ -39,14 +39,14 @@ export const DailyRoutineCard: React.FC<DailyRoutineCardProps> = ({
 
   if (!routine && !isEditing) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-lg flex items-center justify-between gap-4 transition-colors">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center flex-shrink-0">
             <CalendarClock className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-bold text-white text-sm">Modo Rutina Diario</h4>
-            <p className="text-xs text-slate-400">Configura tu trayecto habitual (casa ↔ trabajo o uni) para verlo al instante.</p>
+            <h4 className="font-bold text-slate-900 dark:text-white text-sm">Modo Rutina Diario</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Configura tu trayecto habitual (casa ↔ trabajo o uni) para verlo al instante.</p>
           </div>
         </div>
 
@@ -63,13 +63,13 @@ export const DailyRoutineCard: React.FC<DailyRoutineCardProps> = ({
 
   if (isEditing) {
     return (
-      <form onSubmit={handleSave} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <h4 className="font-bold text-white text-sm">Configurar Rutina Diaria</h4>
+      <form onSubmit={handleSave} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-lg space-y-4 transition-colors">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h4 className="font-bold text-slate-900 dark:text-white text-sm">Configurar Rutina Diaria</h4>
           <button
             type="button"
             onClick={() => setIsEditing(false)}
-            className="text-xs text-slate-400 hover:text-white cursor-pointer"
+            className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
           >
             Cancelar
           </button>
@@ -77,24 +77,24 @@ export const DailyRoutineCard: React.FC<DailyRoutineCardProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label htmlFor="routine-name-input" className="block text-xs text-slate-400 mb-1">Nombre</label>
+            <label htmlFor="routine-name-input" className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Nombre</label>
             <input
               id="routine-name-input"
               type="text"
               value={routineName}
               onChange={e => setRoutineName(e.target.value)}
               placeholder="Ej. Ir al Trabajo / Universidad"
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-teal-500 transition-colors"
             />
           </div>
 
           <div>
-            <label htmlFor="routine-stop-select" className="block text-xs text-slate-400 mb-1">Parada de Inicio</label>
+            <label htmlFor="routine-stop-select" className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Parada de Inicio</label>
             <select
               id="routine-stop-select"
               value={stopCode}
               onChange={e => setStopCode(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-teal-500 transition-colors"
             >
               <option value="">Selecciona parada...</option>
               {stops.map(s => (
@@ -106,12 +106,12 @@ export const DailyRoutineCard: React.FC<DailyRoutineCardProps> = ({
           </div>
 
           <div>
-            <label htmlFor="routine-line-select" className="block text-xs text-slate-400 mb-1">Línea habitual</label>
+            <label htmlFor="routine-line-select" className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Línea habitual</label>
             <select
               id="routine-line-select"
               value={lineName}
               onChange={e => setLineName(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-teal-500 transition-colors"
             >
               <option value="">Selecciona línea...</option>
               {routes.map(r => (
@@ -136,22 +136,22 @@ export const DailyRoutineCard: React.FC<DailyRoutineCardProps> = ({
   const routineStop = stops.find(s => s.code === routine?.originStopCode);
 
   return (
-    <div className="bg-gradient-to-r from-teal-950/70 to-slate-900 border border-teal-500/30 rounded-3xl p-5 shadow-xl flex items-center justify-between gap-4">
+    <div className="bg-gradient-to-r from-teal-50/90 to-emerald-50/40 dark:from-teal-950/70 dark:to-slate-900 border border-teal-200 dark:border-teal-500/30 rounded-3xl p-5 shadow-lg flex items-center justify-between gap-4 transition-colors">
       <div className="flex items-center gap-3.5 min-w-0">
-        <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-300 border border-teal-500/40 flex items-center justify-center flex-shrink-0">
+        <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-500/40 flex items-center justify-center flex-shrink-0">
           <CalendarClock className="w-6 h-6" />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-teal-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400">
               {routine?.name}
             </span>
-            <span className="text-slate-500">•</span>
-            <span className="text-xs font-mono font-bold text-slate-300">
+            <span className="text-slate-400 dark:text-slate-500">•</span>
+            <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-300">
               Línea {routine?.targetLine}
             </span>
           </div>
-          <p className="font-bold text-white text-sm truncate mt-0.5">
+          <p className="font-bold text-slate-900 dark:text-white text-sm truncate mt-0.5">
             Parada #{routine?.originStopCode} {routine?.originStopName}
           </p>
         </div>
@@ -172,7 +172,7 @@ export const DailyRoutineCard: React.FC<DailyRoutineCardProps> = ({
         <button
           type="button"
           onClick={() => setIsEditing(true)}
-          className="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 transition-colors cursor-pointer"
+          className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 transition-colors cursor-pointer"
           aria-label="Editar rutina"
         >
           <Settings2 className="w-4 h-4" />
@@ -181,7 +181,7 @@ export const DailyRoutineCard: React.FC<DailyRoutineCardProps> = ({
         <button
           type="button"
           onClick={clearRoutine}
-          className="p-2 rounded-xl text-slate-400 hover:text-rose-400 bg-slate-800 transition-colors cursor-pointer"
+          className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 bg-slate-100 dark:bg-slate-800 transition-colors cursor-pointer"
           aria-label="Eliminar rutina"
         >
           <Trash2 className="w-4 h-4" />

@@ -27,12 +27,12 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
 
   if (!hasFavorites) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto shadow-xl">
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto shadow-xl transition-colors">
+        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 dark:text-amber-400 flex items-center justify-center mx-auto mb-4">
           <Star className="w-8 h-8" />
         </div>
-        <h3 className="text-xl font-bold text-white mb-2">Tus Favoritos de Valladolid</h3>
-        <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Tus Favoritos de Valladolid</h3>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">
           Guarda tus paradas y líneas habituales pulsando el icono de estrella para consultar sus tiempos de llegada al instante sin tener que buscar.
         </p>
       </div>
@@ -45,8 +45,8 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
       {favoriteLines.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center gap-2 px-1">
-            <Bus className="w-4 h-4 text-teal-400" />
-            <h3 className="font-bold text-white text-base">Líneas Favoritas</h3>
+            <Bus className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+            <h3 className="font-bold text-slate-900 dark:text-white text-base">Líneas Favoritas</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -57,7 +57,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
               return (
                 <div
                   key={lineId}
-                  className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between gap-3 shadow-md hover:border-slate-700 transition-colors"
+                  className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
                 >
                   <button
                     type="button"
@@ -71,10 +71,10 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                       {route.shortName}
                     </span>
                     <div className="min-w-0">
-                      <span className="font-bold text-white text-sm block truncate">
+                      <span className="font-bold text-slate-900 dark:text-white text-sm block truncate">
                         {route.name}
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         {route.origin} ↔ {route.destination}
                       </span>
                     </div>
@@ -83,7 +83,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                   <button
                     type="button"
                     onClick={() => onToggleFavoriteLine(lineId)}
-                    className="p-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     aria-label={`Eliminar línea ${route.shortName} de favoritos`}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -99,8 +99,8 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
       {favoriteStops.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center gap-2 px-1">
-            <MapPin className="w-4 h-4 text-teal-400" />
-            <h3 className="font-bold text-white text-base">Paradas Favoritas</h3>
+            <MapPin className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+            <h3 className="font-bold text-slate-900 dark:text-white text-base">Paradas Favoritas</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -111,25 +111,25 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
               return (
                 <div
                   key={stopCode}
-                  className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between gap-3 shadow-md hover:border-slate-700 transition-colors"
+                  className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
                 >
                   <button
                     type="button"
                     onClick={() => onSelectStop(stop)}
                     className="flex items-start gap-3 min-w-0 text-left flex-1 cursor-pointer"
                   >
-                    <span className="bg-slate-800 text-teal-400 font-mono font-bold text-xs px-2 py-1 rounded-lg border border-slate-700 mt-0.5">
+                    <span className="bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-400 font-mono font-bold text-xs px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 mt-0.5">
                       #{stop.code}
                     </span>
                     <div className="min-w-0">
-                      <span className="font-bold text-white text-sm block truncate">
+                      <span className="font-bold text-slate-900 dark:text-white text-sm block truncate">
                         {stop.name}
                       </span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {stop.routes.slice(0, 6).map(r => (
                           <span
                             key={r}
-                            className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700"
+                            className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                           >
                             {r}
                           </span>
@@ -142,7 +142,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onSelectStop(stop)}
-                      className="p-2 rounded-xl text-teal-400 hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="p-2 rounded-xl text-teal-600 dark:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       aria-label="Ver tiempos"
                     >
                       <ArrowRight className="w-4 h-4" />
@@ -150,7 +150,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onToggleFavoriteStop(stopCode)}
-                      className="p-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       aria-label={`Eliminar parada ${stop.code} de favoritos`}
                     >
                       <Trash2 className="w-4 h-4" />

@@ -11,6 +11,7 @@ interface MapViewTabProps {
   selectedRoute: BusRoute | null;
   userLat: number | null;
   userLon: number | null;
+  theme?: 'light' | 'dark';
   onSelectStop: (stop: BusStop) => void;
   onRequestLocation: () => void;
   onClearRouteFilter: () => void;
@@ -24,6 +25,7 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
   selectedRoute,
   userLat,
   userLon,
+  theme,
   onSelectStop,
   onRequestLocation,
   onClearRouteFilter,
@@ -32,16 +34,16 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
     <div className="h-[calc(100vh-140px)] flex flex-col space-y-3 animate-in fade-in duration-300">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <Map className="w-5 h-5 text-teal-400" />
-          <h2 className="text-lg font-bold text-white">Mapa en Tiempo Real</h2>
-          <span className="text-xs text-slate-400">• {vehicles.length} buses en ruta</span>
+          <Map className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Mapa en Tiempo Real</h2>
+          <span className="text-xs text-slate-500 dark:text-slate-400">• {vehicles.length} buses en ruta</span>
         </div>
 
         {selectedRoute && (
           <button
             type="button"
             onClick={onClearRouteFilter}
-            className="text-xs text-teal-400 hover:text-teal-300 font-bold bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl cursor-pointer"
+            className="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl shadow-sm transition-colors cursor-pointer"
           >
             Quitar filtro de línea ({selectedRoute.shortName})
           </button>
@@ -56,6 +58,7 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
         selectedRoute={selectedRoute}
         userLat={userLat}
         userLon={userLon}
+        theme={theme}
         onSelectStop={onSelectStop}
         onRequestLocation={onRequestLocation}
       />

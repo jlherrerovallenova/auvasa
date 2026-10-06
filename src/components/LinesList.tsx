@@ -65,7 +65,7 @@ export const LinesList: React.FC<LinesListProps> = ({
               className={`px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                 isActive
                   ? 'bg-teal-600 text-white shadow-lg shadow-teal-700/30'
-                  : 'bg-slate-900 text-slate-300 border border-slate-800 hover:bg-slate-800 hover:text-white'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white shadow-sm'
               }`}
             >
               {cat.label}
@@ -78,7 +78,7 @@ export const LinesList: React.FC<LinesListProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Routes Cards List */}
         <div className={`space-y-3 ${activeLine ? 'lg:col-span-6' : 'lg:col-span-12'}`}>
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">
+          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">
             {filteredRoutes.length} líneas encontradas
           </div>
 
@@ -101,10 +101,10 @@ export const LinesList: React.FC<LinesListProps> = ({
                       setDirectionIndex('0');
                     }
                   }}
-                  className={`p-4 rounded-2xl border text-left transition-colors cursor-pointer flex items-center justify-between gap-3 shadow-md ${
+                  className={`p-4 rounded-2xl border text-left transition-colors cursor-pointer flex items-center justify-between gap-3 shadow-sm dark:shadow-md ${
                     isSelected
-                      ? 'bg-slate-800/90 border-teal-500/80 shadow-teal-500/10'
-                      : 'bg-slate-900/80 hover:bg-slate-850 border-slate-800/80 hover:border-slate-700'
+                      ? 'bg-teal-50/70 dark:bg-slate-800/90 border-teal-500/80 shadow-teal-500/10'
+                      : 'bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-850 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
@@ -115,25 +115,25 @@ export const LinesList: React.FC<LinesListProps> = ({
                       {route.shortName}
                     </span>
                     <div className="min-w-0">
-                      <span className="font-bold text-white text-sm block truncate">
+                      <span className="font-bold text-slate-900 dark:text-white text-sm block truncate">
                         {route.name}
                       </span>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
+                      <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
                         {lineVehicles.length > 0 ? (
-                          <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                             {lineVehicles.length} en ruta
                           </span>
                         ) : (
-                          <span className="text-slate-500">Sin buses en directo</span>
+                          <span className="text-slate-400 dark:text-slate-500">Sin buses en directo</span>
                         )}
                       </div>
                     </div>
                   </div>
 
                   <ChevronRight
-                    className={`w-5 h-5 text-slate-500 transition-transform flex-shrink-0 ${
-                      isSelected ? 'rotate-90 text-teal-400' : ''
+                    className={`w-5 h-5 text-slate-400 dark:text-slate-500 transition-transform flex-shrink-0 ${
+                      isSelected ? 'rotate-90 text-teal-600 dark:text-teal-400' : ''
                     }`}
                   />
                 </button>
@@ -144,9 +144,9 @@ export const LinesList: React.FC<LinesListProps> = ({
 
         {/* Right Column: Line Route Explorer & Stops Progression */}
         {activeLine && (
-          <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl h-fit">
+          <div className="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xl h-fit transition-colors">
             {/* Header of Active Line */}
-            <div className="flex items-start justify-between gap-3 pb-4 border-b border-slate-800">
+            <div className="flex items-start justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <span
                   className="w-14 h-12 rounded-2xl font-black text-xl flex items-center justify-center shadow-lg"
@@ -155,11 +155,11 @@ export const LinesList: React.FC<LinesListProps> = ({
                   {activeLine.shortName}
                 </span>
                 <div>
-                  <h3 className="font-bold text-white text-base leading-tight">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">
                     {activeLine.name}
                   </h3>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
-                    <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                  <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
                       <Radio className="w-3.5 h-3.5" />
                       {activeLineVehicles.length} autobuses activos en GPS
                     </span>
@@ -187,7 +187,7 @@ export const LinesList: React.FC<LinesListProps> = ({
                   className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-colors text-left flex items-center gap-2 cursor-pointer ${
                     directionIndex === '0'
                       ? 'bg-teal-600 text-white shadow-md'
-                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <ArrowRightLeft className="w-3.5 h-3.5 flex-shrink-0" />
@@ -204,7 +204,7 @@ export const LinesList: React.FC<LinesListProps> = ({
                   className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-colors text-left flex items-center gap-2 cursor-pointer ${
                     directionIndex === '1'
                       ? 'bg-teal-600 text-white shadow-md'
-                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <ArrowRightLeft className="w-3.5 h-3.5 flex-shrink-0" />
@@ -234,7 +234,7 @@ export const LinesList: React.FC<LinesListProps> = ({
 
                     {/* Timeline dot */}
                     <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 border-slate-900 shadow-md text-[10px] font-bold"
+                      className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 border-white dark:border-slate-900 shadow-md text-[10px] font-bold"
                       style={{ backgroundColor: activeLine.color, color: activeLine.textColor }}
                     >
                       {index + 1}
@@ -246,20 +246,20 @@ export const LinesList: React.FC<LinesListProps> = ({
                       onClick={() => {
                         if (fullStop) onSelectStop(fullStop);
                       }}
-                      className="flex-1 p-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left cursor-pointer flex items-center justify-between gap-2"
+                      className="flex-1 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors text-left cursor-pointer flex items-center justify-between gap-2"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-teal-400 font-bold bg-slate-800 px-1.5 py-0.2 rounded border border-slate-700">
+                          <span className="font-mono text-xs text-teal-700 dark:text-teal-400 font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded border border-slate-200 dark:border-slate-700">
                             #{stopItem.stopCode}
                           </span>
-                          <span className="font-semibold text-white text-sm group-hover:text-teal-300 transition-colors truncate">
+                          <span className="font-semibold text-slate-900 dark:text-white text-sm group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors truncate">
                             {stopItem.name}
                           </span>
                         </div>
                       </div>
 
-                      <span className="text-[11px] text-slate-400 group-hover:text-teal-400 font-medium whitespace-nowrap">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 font-medium whitespace-nowrap">
                         Ver tiempos →
                       </span>
                     </button>

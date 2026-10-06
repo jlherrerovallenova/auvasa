@@ -38,14 +38,14 @@ export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Hero Banner */}
       <div className="text-center max-w-2xl mx-auto pt-2 pb-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-semibold mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-300 text-xs font-semibold mb-3">
           <Sparkles className="w-3.5 h-3.5" />
           <span>Tiempo Real Infalible • Valladolid AUVASA</span>
         </div>
-        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
-          Control Total de tu <span className="text-teal-400">Autobús</span>
+        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+          Control Total de tu <span className="text-teal-600 dark:text-teal-400">Autobús</span>
         </h1>
-        <p className="text-sm md:text-base text-slate-400 mt-2.5">
+        <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mt-2.5">
           Localización GPS satelital en directo, horarios exactos y búsqueda ultrarrápida sin esperas ni errores.
         </p>
 
@@ -96,16 +96,16 @@ export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
       />
 
       {/* Quick Map Preview Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 transition-colors">
         <div className="space-y-2 text-center md:text-left">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-400 uppercase tracking-wider">
-            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">
+            <Radio className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 animate-pulse" />
             Mapa Interactivo Satelital
           </div>
-          <h3 className="text-xl font-bold text-white">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
             Mira {vehiclesCount} autobuses moviéndose por Valladolid
           </h3>
-          <p className="text-sm text-slate-400 max-w-lg">
+          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-lg">
             Consulta el mapa completo con las 54 líneas, sentidos de recorrido, paradas y la posición exacta de cada autobús con su matrícula y velocidad en directo.
           </p>
         </div>

@@ -17,9 +17,11 @@ import { useRealtime } from './hooks/useRealtime.ts';
 import { useGeolocation } from './hooks/useGeolocation.ts';
 import { useFavorites } from './hooks/useFavorites.ts';
 import { useDestinationAlarm } from './hooks/useDestinationAlarm.ts';
+import { useTheme } from './hooks/useTheme.ts';
 import type { BusStop, BusRoute, StopArrival } from './types/bus.ts';
 
 export const App: React.FC = () => {
+  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<ActiveTab>('search');
   const [selectedStop, setSelectedStop] = useState<BusStop | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<BusRoute | null>(null);
@@ -118,13 +120,15 @@ export const App: React.FC = () => {
   }, [routes]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-20 md:pb-8 selection:bg-teal-500 selection:text-white">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans pb-20 md:pb-8 selection:bg-teal-500 selection:text-white transition-colors">
       {/* Top Navbar */}
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
         vehiclesCount={vehicles.length}
         alertsCount={0}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Main Content Area */}
@@ -201,6 +205,7 @@ export const App: React.FC = () => {
             selectedRoute={selectedRoute}
             userLat={userLat}
             userLon={userLon}
+            theme={theme}
             onSelectStop={handleSelectStop}
             onRequestLocation={requestLocation}
             onClearRouteFilter={() => setSelectedRoute(null)}
@@ -220,9 +225,9 @@ export const App: React.FC = () => {
         {/* Tab 6: Favorites */}
         {activeTab === 'favorites' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="pb-2 border-b border-slate-800">
-              <h2 className="text-2xl font-black text-white tracking-tight">Tus Favoritos</h2>
-              <p className="text-sm text-slate-400 mt-0.5">
+            <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Tus Favoritos</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                 Acceso directo a tus paradas y líneas guardadas.
               </p>
             </div>

@@ -24,12 +24,12 @@ export const LinesExplorerTab: React.FC<LinesExplorerTabProps> = ({
 }) => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
             Líneas de Autobús de Valladolid
           </h2>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Red completa de AUVASA: recorridos, sentidos, paradas y buses en tiempo real.
           </p>
         </div>

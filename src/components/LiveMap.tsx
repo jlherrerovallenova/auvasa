@@ -13,6 +13,7 @@ interface LiveMapProps {
   selectedRoute: BusRoute | null;
   userLat: number | null;
   userLon: number | null;
+  theme?: 'light' | 'dark';
   onSelectStop: (stop: BusStop) => void;
   onRequestLocation: () => void;
 }
@@ -26,6 +27,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   selectedRoute,
   userLat,
   userLon,
+  theme,
   onSelectStop,
   onRequestLocation,
 }) => {
@@ -34,7 +36,15 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   const [vehiclesLayer, setVehiclesLayer] = useState<L.LayerGroup | null>(null);
   const [stopsLayer, setStopsLayer] = useState<L.LayerGroup | null>(null);
   const [showStops, setShowStops] = useState(true);
-  const [mapTheme, setMapTheme] = useState<'dark' | 'streets'>('dark');
+  const [mapTheme, setMapTheme] = useState<'dark' | 'streets'>(
+    theme === 'light' ? 'streets' : 'dark'
+  );
+
+  useEffect(() => {
+    if (theme) {
+      setMapTheme(theme === 'light' ? 'streets' : 'dark');
+    }
+  }, [theme]);
 
   const baseTilesRef = useRef<L.LayerGroup | null>(null);
 
@@ -147,7 +157,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   }, []);
 
   return (
-    <div className="relative w-full h-full min-h-[500px] flex-1 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
+    <div className="relative w-full h-full min-h-[500px] flex-1 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl dark:shadow-2xl bg-slate-100 dark:bg-slate-950 transition-colors">
       <div ref={mapContainerRef} className="w-full h-full z-10" />
 
       {/* Floating Map Controls */}
