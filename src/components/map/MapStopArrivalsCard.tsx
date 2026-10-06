@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle, ChevronDown } from 'lucide-react';
 import type { BusStop, StopArrival } from '../../types/bus.ts';
 import { useStopArrivals } from '../../hooks/useStopArrivals.ts';
 
@@ -21,6 +21,11 @@ export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
   onShareArrival,
 }) => {
   const { data, loading, error, refresh } = useStopArrivals(stop.code);
+  const [showRoutes, setShowRoutes] = useState(false);
+
+  useEffect(() => {
+    setShowRoutes(false);
+  }, [stop.code]);
 
   return (
     <div className="absolute bottom-3 left-2 right-2 sm:left-4 sm:right-auto sm:bottom-4 sm:w-[420px] max-w-[calc(100%-1rem)] sm:max-w-md z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[55dvh] sm:max-h-[480px] overflow-hidden animate-in slide-in-from-bottom duration-200 text-slate-800 dark:text-slate-100 transition-colors">
@@ -96,20 +101,36 @@ export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
           </div>
         </div>
 
-        {/* Passing Lines Badges */}
-        {stop.routes.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold self-center mr-0.5">
-              Líneas:
-            </span>
-            {stop.routes.map(r => (
-              <span
-                key={r}
-                className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-slate-200 dark:border-slate-700 shadow-2xs"
-              >
-                {r}
-              </span>
-            ))}
+        {/* Collapsible Passing Lines */}
+        {stop.routes && stop.routes.length > 0 && (
+          <div className="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+            <button
+              type="button"
+              onClick={() => setShowRoutes(prev => !prev)}
+              className="flex items-center justify-between w-full text-[11px] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer group"
+              aria-expanded={showRoutes}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Líneas ({stop.routes.length})</span>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-bold text-teal-600 dark:text-teal-400 group-hover:text-teal-500 transition-colors">
+                <span>{showRoutes ? 'Recoger líneas' : 'Desplegar líneas'}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showRoutes ? 'rotate-180' : ''}`} />
+              </div>
+            </button>
+
+            {showRoutes && (
+              <div className="flex flex-wrap gap-1 mt-2 pt-1.5 border-t border-dashed border-slate-200/80 dark:border-slate-800/80 max-h-28 overflow-y-auto">
+                {stop.routes.map(r => (
+                  <span
+                    key={r}
+                    className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-slate-200 dark:border-slate-700 shadow-2xs"
+                  >
+                    {r}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

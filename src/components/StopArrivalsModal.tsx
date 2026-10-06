@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Share2, Zap, Accessibility } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Share2, Zap, Accessibility, ChevronDown } from 'lucide-react';
 import type { BusStop, StopArrival } from '../types/bus.ts';
 import { useStopArrivals } from '../hooks/useStopArrivals.ts';
 import { getBusFleetInfo, parseOccupancy } from '../utils/fleet.ts';
@@ -211,6 +211,11 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
   onShareArrival,
 }) => {
   const { data, loading, error, refresh } = useStopArrivals(stop?.code || null);
+  const [showRoutes, setShowRoutes] = useState(false);
+
+  useEffect(() => {
+    setShowRoutes(false);
+  }, [stop?.code]);
 
   if (!stop) return null;
 
@@ -265,20 +270,38 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
             </div>
           </div>
 
-          {/* Quick passing lines badges */}
-          <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-200 dark:border-slate-800/60">
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold self-center mr-1">
-              Líneas:
-            </span>
-            {stop.routes.map(r => (
-              <span
-                key={r}
-                className="text-xs font-black px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-slate-200 dark:border-slate-700"
+          {/* Collapsible passing lines */}
+          {stop.routes && stop.routes.length > 0 && (
+            <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800/60">
+              <button
+                type="button"
+                onClick={() => setShowRoutes(prev => !prev)}
+                className="flex items-center justify-between w-full py-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer group"
+                aria-expanded={showRoutes}
               >
-                {r}
-              </span>
-            ))}
-          </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">Líneas ({stop.routes.length})</span>
+                </div>
+                <div className="flex items-center gap-1 text-[11px] font-bold text-teal-600 dark:text-teal-400 group-hover:text-teal-500 transition-colors">
+                  <span>{showRoutes ? 'Recoger líneas' : 'Desplegar líneas'}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showRoutes ? 'rotate-180' : ''}`} />
+                </div>
+              </button>
+
+              {showRoutes && (
+                <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-dashed border-slate-200 dark:border-slate-800/60 max-h-36 overflow-y-auto">
+                  {stop.routes.map(r => (
+                    <span
+                      key={r}
+                      className="text-xs font-black px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-slate-200 dark:border-slate-700"
+                    >
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Modal Body: Arrivals list */}
