@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, ShieldCheck } from 'lucide-react';
-import type { BusStop } from '../types/bus.ts';
+import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Share2, Zap, Accessibility } from 'lucide-react';
+import type { BusStop, StopArrival } from '../types/bus.ts';
 import { useStopArrivals } from '../hooks/useStopArrivals.ts';
+import { getBusFleetInfo, parseOccupancy } from '../utils/fleet.ts';
 
 interface StopArrivalsModalProps {
   stop: BusStop | null;
@@ -9,7 +10,196 @@ interface StopArrivalsModalProps {
   isFavorite: boolean;
   onToggleFavorite: (stopCode: string) => void;
   onViewOnMap: (stop: BusStop) => void;
+  onSetAlarm?: (stop: BusStop) => void;
+  onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
 }
+
+interface ArrivalItemProps {
+  arr: StopArrival;
+  stop: BusStop;
+  onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
+}
+
+const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival }) => {
+  const isArriving = arr.minutesRemaining <= 0;
+  const fleet = getBusFleetInfo(arr.vehicleId);
+  const occupancy = parseOccupancy(arr.occupancy);
+
+  return (
+    <div className="p-3.5 rounded-2xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 transition-colors space-y-2 shadow-md">
+      <div className="flex items-center justify-between gap-3">
+        {/* Left: Line and Destination */}
+        <div className="flex items-center gap-3 min-w-0">
+          <span
+            className="w-11 h-9 rounded-xl font-black text-sm flex items-center justify-center shadow-md flex-shrink-0 tracking-tight"
+            style={{ backgroundColor: arr.routeColor, color: arr.routeTextColor }}
+          >
+            {arr.routeShortName}
+          </span>
+          <div className="min-w-0">
+            <span className="font-bold text-white text-sm block truncate">
+              {arr.destination || `Línea ${arr.routeShortName}`}
+            </span>
+            <div className="flex items-center gap-2 mt-0.5 text-xs">
+              {arr.isRealtime ? (
+                <span className="text-emerald-400 flex items-center gap-1 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  GPS Real
+                  {arr.licensePlate && (
+                    <span className="text-slate-400 font-mono text-[11px] ml-1">
+                      ({arr.licensePlate})
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="text-amber-400/90 flex items-center gap-1 font-medium">
+                  <Clock className="w-3 h-3" />
+                  Programado ({arr.exactTime})
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Arrival Time Badge & Share Button */}
+        <div className="flex items-center gap-2">
+          {onShareArrival && (
+            <button
+              type="button"
+              onClick={() => onShareArrival(stop, arr)}
+              className="p-2 rounded-xl bg-slate-750 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Compartir hora de llegada"
+              aria-label="Compartir hora de llegada"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          )}
+
+          <div className="text-right flex-shrink-0">
+            <div
+              className={`inline-flex items-center px-3 py-1.5 rounded-xl font-black text-sm shadow-sm ${
+                isArriving
+                  ? 'bg-emerald-500 text-slate-950 animate-pulse font-extrabold'
+                  : arr.isRealtime
+                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                  : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+              }`}
+            >
+              {isArriving ? 'Llegando' : `${arr.minutesRemaining} min`}
+            </div>
+            <div className="text-[10px] text-slate-500 mt-1 font-mono">
+              Hora: {arr.exactTime}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Fleet and Occupancy Radar Badges */}
+      {arr.isRealtime && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-750/70 text-[10px]">
+          <span className={`px-2 py-0.5 rounded-md font-medium border ${occupancy.bgClass} ${occupancy.colorClass}`}>
+            {occupancy.label}
+          </span>
+
+          <span className="px-2 py-0.5 rounded-md font-medium bg-slate-900 text-slate-300 border border-slate-750 flex items-center gap-1">
+            {fleet.propulsion === '100% Eléctrico' && <Zap className="w-3 h-3 text-emerald-400" />}
+            <span>{fleet.model}</span>
+          </span>
+
+          {fleet.hasPMR && (
+            <span className="px-1.5 py-0.5 rounded-md bg-slate-900 text-sky-400 border border-slate-750 flex items-center gap-0.5" title="Rampa accesible para movilidad reducida">
+              <Accessibility className="w-3 h-3" />
+              <span>PMR</span>
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface StopArrivalsBodyProps {
+  data: ReturnType<typeof useStopArrivals>['data'];
+  loading: boolean;
+  error: string | null;
+  refresh: () => void;
+  stop: BusStop;
+  onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
+}
+
+const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
+  data,
+  loading,
+  error,
+  refresh,
+  stop,
+  onShareArrival,
+}) => {
+  return (
+    <div className="p-5 overflow-y-auto flex-1 space-y-3">
+      <div className="flex items-center justify-between text-xs text-slate-400 pb-1">
+        <span className="font-semibold uppercase tracking-wider text-[11px] text-slate-400 flex items-center gap-1.5">
+          <Radio className="w-3.5 h-3.5 text-emerald-400" />
+          Próximas Llegadas
+        </span>
+        <button
+          type="button"
+          onClick={refresh}
+          disabled={loading}
+          className="flex items-center gap-1 text-teal-400 hover:text-teal-300 font-medium transition-colors cursor-pointer disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Actualizar</span>
+        </button>
+      </div>
+
+      {loading && !data && (
+        <div className="py-12 text-center text-slate-400">
+          <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin text-teal-500" />
+          <p className="text-sm">Consultando satélites GPS y horarios...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-4 bg-red-950/40 border border-red-500/30 rounded-2xl text-red-300 text-sm flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">No se pudo cargar la información</p>
+            <p className="text-xs text-red-400 mt-0.5">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {data && data.arrivals.length === 0 && !loading && (
+        <div className="py-10 text-center text-slate-400 bg-slate-800/30 rounded-2xl border border-slate-800">
+          <Clock className="w-10 h-10 mx-auto mb-2 text-slate-500 opacity-60" />
+          <p className="text-sm font-medium text-slate-300">
+            Sin paso de autobuses previsto en los próximos minutos
+          </p>
+          <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+            No hay servicios activos o en camino para las líneas de esta parada en este momento.
+          </p>
+        </div>
+      )}
+
+      {data && data.arrivals.length > 0 && (
+        <div className="space-y-2.5">
+          {data.arrivals.map(arr => {
+            const uniqueKey = `${arr.routeShortName}_${arr.timestamp}_${arr.exactTime}_${arr.isRealtime ? 'rt' : 'sc'}`;
+            return (
+              <ArrivalItem
+                key={uniqueKey}
+                arr={arr}
+                stop={stop}
+                onShareArrival={onShareArrival}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
   stop,
@@ -17,6 +207,8 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
   isFavorite,
   onToggleFavorite,
   onViewOnMap,
+  onSetAlarm,
+  onShareArrival,
 }) => {
   const { data, loading, error, refresh } = useStopArrivals(stop?.code || null);
 
@@ -90,137 +282,44 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
         </div>
 
         {/* Modal Body: Arrivals list */}
-        <div className="p-5 overflow-y-auto flex-1 space-y-3">
-          <div className="flex items-center justify-between text-xs text-slate-400 pb-1">
-            <span className="font-semibold uppercase tracking-wider text-[11px] text-slate-400 flex items-center gap-1.5">
-              <Radio className="w-3.5 h-3.5 text-emerald-400" />
-              Próximas Llegadas
-            </span>
-            <button
-              type="button"
-              onClick={refresh}
-              disabled={loading}
-              className="flex items-center gap-1 text-teal-400 hover:text-teal-300 font-medium transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>Actualizar</span>
-            </button>
-          </div>
-
-          {loading && !data && (
-            <div className="py-12 text-center text-slate-400">
-              <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin text-teal-500" />
-              <p className="text-sm">Consultando satélites GPS y horarios...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="p-4 bg-red-950/40 border border-red-500/30 rounded-2xl text-red-300 text-sm flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold">No se pudo cargar la información</p>
-                <p className="text-xs text-red-400 mt-0.5">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {data && data.arrivals.length === 0 && !loading && (
-            <div className="py-10 text-center text-slate-400 bg-slate-800/30 rounded-2xl border border-slate-800">
-              <Clock className="w-10 h-10 mx-auto mb-2 text-slate-500 opacity-60" />
-              <p className="text-sm font-medium text-slate-300">
-                Sin paso de autobuses previsto en los próximos minutos
-              </p>
-              <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                No hay servicios activos o en camino para las líneas de esta parada en este momento.
-              </p>
-            </div>
-          )}
-
-          {data && data.arrivals.length > 0 && (
-            <div className="space-y-2.5">
-              {data.arrivals.map(arr => {
-                const isArriving = arr.minutesRemaining <= 0;
-                const uniqueKey = `${arr.routeShortName}_${arr.timestamp}_${arr.exactTime}_${arr.isRealtime ? 'rt' : 'sc'}`;
-                return (
-                  <div
-                    key={uniqueKey}
-                    className="p-3.5 rounded-2xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 transition-colors flex items-center justify-between gap-3 shadow-md"
-                  >
-                    {/* Left: Line and Destination */}
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span
-                        className="w-11 h-9 rounded-xl font-black text-sm flex items-center justify-center shadow-md flex-shrink-0 tracking-tight"
-                        style={{ backgroundColor: arr.routeColor, color: arr.routeTextColor }}
-                      >
-                        {arr.routeShortName}
-                      </span>
-                      <div className="min-w-0">
-                        <span className="font-bold text-white text-sm block truncate">
-                          {arr.destination || `Línea ${arr.routeShortName}`}
-                        </span>
-                        <div className="flex items-center gap-2 mt-0.5 text-xs">
-                          {arr.isRealtime ? (
-                            <span className="text-emerald-400 flex items-center gap-1 font-semibold">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              GPS Real
-                              {arr.licensePlate && (
-                                <span className="text-slate-400 font-mono text-[11px] ml-1">
-                                  ({arr.licensePlate})
-                                </span>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-amber-400/90 flex items-center gap-1 font-medium">
-                              <Clock className="w-3 h-3" />
-                              Programado ({arr.exactTime})
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Arrival Time Badge */}
-                    <div className="text-right flex-shrink-0">
-                      <div
-                        className={`inline-flex items-center px-3 py-1.5 rounded-xl font-black text-sm shadow-sm ${
-                          isArriving
-                            ? 'bg-emerald-500 text-slate-950 animate-pulse font-extrabold'
-                            : arr.isRealtime
-                            ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                            : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                        }`}
-                      >
-                        {isArriving ? 'Llegando' : `${arr.minutesRemaining} min`}
-                      </div>
-                      <div className="text-[10px] text-slate-500 mt-1 font-mono">
-                        Hora: {arr.exactTime}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <StopArrivalsBody
+          data={data}
+          loading={loading}
+          error={error}
+          refresh={refresh}
+          stop={stop}
+          onShareArrival={onShareArrival}
+        />
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-900/95 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-1 text-[11px] text-slate-500">
-            <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-            <span>Datos GTFS AUVASA certificados</span>
-          </div>
+        <div className="p-4 border-t border-slate-800 bg-slate-900/95 flex items-center justify-between gap-2">
+          {onSetAlarm && (
+            <button
+              type="button"
+              onClick={() => {
+                onSetAlarm(stop);
+                onClose();
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-teal-300 text-xs font-bold transition-colors border border-slate-700 cursor-pointer"
+            >
+              <Bell className="w-3.5 h-3.5 text-teal-400" />
+              <span>Avisarme al llegar</span>
+            </button>
+          )}
 
-          <button
-            type="button"
-            onClick={() => {
-              onViewOnMap(stop);
-              onClose();
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors shadow-md shadow-teal-700/30 cursor-pointer"
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>Ver en el Mapa</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                onViewOnMap(stop);
+                onClose();
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors shadow-md shadow-teal-700/30 cursor-pointer"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Ver en el Mapa</span>
+            </button>
+          </div>
         </div>
       </div>
     </dialog>

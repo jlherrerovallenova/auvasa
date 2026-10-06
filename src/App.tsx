@@ -1,19 +1,23 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Header, type ActiveTab } from './components/Header.tsx';
-import { SearchBar } from './components/SearchBar.tsx';
-import { LiveMap } from './components/LiveMap.tsx';
-import { StopArrivalsModal } from './components/StopArrivalsModal.tsx';
-import { LinesList } from './components/LinesList.tsx';
-import { NearbyStops } from './components/NearbyStops.tsx';
+import { HomeSearchView } from './components/HomeSearchView.tsx';
+import { RoutePlanner } from './components/RoutePlanner.tsx';
+import { LinesExplorerTab } from './components/LinesExplorerTab.tsx';
+import { MapViewTab } from './components/MapViewTab.tsx';
+import { MarquesinaDial } from './components/MarquesinaDial.tsx';
 import { FavoritesView } from './components/FavoritesView.tsx';
 import { AlertsView } from './components/AlertsView.tsx';
+import { DestinationAlarmBanner } from './components/DestinationAlarmBanner.tsx';
+import { SharedArrivalBanner } from './components/SharedArrivalBanner.tsx';
+import { StopArrivalsModal } from './components/StopArrivalsModal.tsx';
+import { ShareArrivalModal } from './components/ShareArrivalModal.tsx';
 import { useStops } from './hooks/useStops.ts';
 import { useRoutes } from './hooks/useRoutes.ts';
 import { useRealtime } from './hooks/useRealtime.ts';
 import { useGeolocation } from './hooks/useGeolocation.ts';
 import { useFavorites } from './hooks/useFavorites.ts';
-import type { BusStop, BusRoute } from './types/bus.ts';
-import { Radio, Sparkles, Map, Compass } from 'lucide-react';
+import { useDestinationAlarm } from './hooks/useDestinationAlarm.ts';
+import type { BusStop, BusRoute, StopArrival } from './types/bus.ts';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('search');
@@ -40,6 +44,43 @@ export const App: React.FC = () => {
     toggleFavoriteLine,
     isFavoriteStop,
   } = useFavorites();
+
+  // Geofencing Destination Alarm
+  const {
+    targetStop: alarmTargetStop,
+    distanceMeters: alarmDistanceMeters,
+    isTriggered: alarmIsTriggered,
+    setAlarmForStop,
+    cancelAlarm,
+  } = useDestinationAlarm();
+
+  // Live ETA Sharing Modal
+  const [sharingData, setSharingData] = useState<{ stop: BusStop; arrival: StopArrival } | null>(null);
+
+  // Shared arrival URL payload (?share=1&line=...&stop=...&eta=...)
+  const [sharedArrivalBanner, setSharedArrivalBanner] = useState<{ line: string; stop: string; eta: string } | null>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('share') === '1' && params.get('line') && params.get('stop')) {
+        return {
+          line: params.get('line') || '',
+          stop: params.get('stop') || '',
+          eta: params.get('eta') || '',
+        };
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+
+  const handleOpenSharedStop = useCallback(() => {
+    if (!sharedArrivalBanner) return;
+    const s = stopMapByCode.get(sharedArrivalBanner.stop);
+    if (s) {
+      setSelectedStop(s);
+    }
+  }, [sharedArrivalBanner, stopMapByCode]);
 
   const nearbyStops = useMemo(() => {
     return getNearbyStops(stops, 1500, 6);
@@ -87,158 +128,96 @@ export const App: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+        {/* Geofencing Alarm Floating Banner & Alarm Dialog */}
+        <DestinationAlarmBanner
+          targetStop={alarmTargetStop}
+          distanceMeters={alarmDistanceMeters}
+          isTriggered={alarmIsTriggered}
+          onCancel={cancelAlarm}
+        />
+
+        {/* Shared ETA URL Welcome Banner */}
+        <SharedArrivalBanner
+          info={sharedArrivalBanner}
+          onOpenStop={handleOpenSharedStop}
+          onClose={() => setSharedArrivalBanner(null)}
+        />
+
         {/* Tab 1: Search & Home */}
         {activeTab === 'search' && (
-          <div className="space-y-8 animate-in fade-in duration-300">
-            {/* Hero Banner */}
-            <div className="text-center max-w-2xl mx-auto pt-2 pb-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-semibold mb-3">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Tiempo Real Infalible • Valladolid AUVASA</span>
-              </div>
-              <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
-                Control Total de tu <span className="text-teal-400">Autobús</span>
-              </h1>
-              <p className="text-sm md:text-base text-slate-400 mt-2.5">
-                Localización GPS satelital en directo, horarios exactos y búsqueda ultrarrápida sin esperas ni errores.
-              </p>
-
-              {/* Universal Instant Search Bar */}
-              <div className="mt-6">
-                <SearchBar
-                  stops={stops}
-                  routes={routes}
-                  onSelectStop={handleSelectStop}
-                  onSelectRoute={handleSelectRouteFromSearch}
-                />
-              </div>
-
-              {/* Quick Popular Lines Pills */}
-              {popularLines.length > 0 && (
-                <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-                  <span className="text-xs text-slate-500 font-semibold mr-1">Líneas rápidas:</span>
-                  {popularLines.map(line => (
-                    <button
-                      key={line.id}
-                      type="button"
-                      onClick={() => handleSelectRouteFromSearch(line)}
-                      className="px-2.5 py-1 rounded-lg font-black text-xs transition-transform hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
-                      style={{ backgroundColor: line.color, color: line.textColor }}
-                    >
-                      {line.shortName}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Nearby Stops Section */}
-            <NearbyStops
-              nearbyStops={nearbyStops}
-              hasLocation={userLat !== null && userLon !== null}
-              loadingLocation={loadingLocation}
-              locationError={locationError}
-              onRequestLocation={requestLocation}
-              onSelectStop={handleSelectStop}
-            />
-
-            {/* Quick Map Preview Card */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="space-y-2 text-center md:text-left">
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-400 uppercase tracking-wider">
-                  <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                  Mapa Interactivo Satelital
-                </div>
-                <h3 className="text-xl font-bold text-white">
-                  Mira {vehicles.length} autobuses moviéndose por Valladolid
-                </h3>
-                <p className="text-sm text-slate-400 max-w-lg">
-                  Consulta el mapa completo con las 54 líneas, sentidos de recorrido, paradas y la posición exacta de cada autobús con su matrícula y velocidad en directo.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('map')}
-                className="flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-500 hover:from-teal-500 hover:to-emerald-400 text-white font-bold px-6 py-3.5 rounded-2xl transition-transform shadow-lg shadow-teal-700/30 active:scale-95 cursor-pointer whitespace-nowrap"
-              >
-                <Compass className="w-5 h-5" />
-                <span>Abrir Mapa en Directo</span>
-              </button>
-            </div>
-          </div>
+          <HomeSearchView
+            stops={stops}
+            routes={routes}
+            vehiclesCount={vehicles.length}
+            popularLines={popularLines}
+            nearbyStops={nearbyStops}
+            hasLocation={userLat !== null && userLon !== null}
+            loadingLocation={loadingLocation}
+            locationError={locationError}
+            onRequestLocation={requestLocation}
+            onSelectStop={handleSelectStop}
+            onSelectRouteFromSearch={handleSelectRouteFromSearch}
+            onOpenMap={() => setActiveTab('map')}
+          />
         )}
 
-        {/* Tab 2: Lines Explorer */}
-        {activeTab === 'lines' && (
+        {/* Tab 2: Live Route Planner (De A a B) */}
+        {activeTab === 'routes' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-800">
-              <div>
-                <h2 className="text-2xl font-black text-white tracking-tight">
-                  Líneas de Autobús de Valladolid
-                </h2>
-                <p className="text-sm text-slate-400 mt-0.5">
-                  Red completa de AUVASA: recorridos, sentidos, paradas y buses en tiempo real.
-                </p>
-              </div>
-
-              <div className="w-full md:w-80">
-                <SearchBar
-                  stops={stops}
-                  routes={routes}
-                  onSelectStop={handleSelectStop}
-                  onSelectRoute={handleSelectRouteFromSearch}
-                />
-              </div>
-            </div>
-
-            <LinesList
-              routes={routes}
-              vehicles={vehicles}
-              onSelectRouteForMap={handleSelectRouteForMap}
-              onSelectStop={handleSelectStop}
-              stopsMapByCode={stopMapByCode}
-            />
-          </div>
-        )}
-
-        {/* Tab 3: Fullscreen Live Map */}
-        {activeTab === 'map' && (
-          <div className="h-[calc(100vh-140px)] flex flex-col space-y-3 animate-in fade-in duration-300">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <Map className="w-5 h-5 text-teal-400" />
-                <h2 className="text-lg font-bold text-white">Mapa en Tiempo Real</h2>
-                <span className="text-xs text-slate-400">• {vehicles.length} buses en ruta</span>
-              </div>
-
-              {selectedRoute && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedRoute(null)}
-                  className="text-xs text-teal-400 hover:text-teal-300 font-bold bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl cursor-pointer"
-                >
-                  Quitar filtro de línea ({selectedRoute.shortName})
-                </button>
-              )}
-            </div>
-
-            <LiveMap
+            <RoutePlanner
               stops={stops}
               routes={routes}
               vehicles={vehicles}
-              selectedStop={selectedStop}
-              selectedRoute={selectedRoute}
               userLat={userLat}
               userLon={userLon}
-              onSelectStop={handleSelectStop}
               onRequestLocation={requestLocation}
+              onSelectStop={handleSelectStop}
+              onSelectRoute={handleSelectRouteFromSearch}
             />
           </div>
         )}
 
-        {/* Tab 4: Favorites */}
+        {/* Tab 3: Lines Explorer */}
+        {activeTab === 'lines' && (
+          <LinesExplorerTab
+            stops={stops}
+            routes={routes}
+            vehicles={vehicles}
+            stopsMapByCode={stopMapByCode}
+            onSelectStop={handleSelectStop}
+            onSelectRouteFromSearch={handleSelectRouteFromSearch}
+            onSelectRouteForMap={handleSelectRouteForMap}
+          />
+        )}
+
+        {/* Tab 4: Fullscreen Live Map */}
+        {activeTab === 'map' && (
+          <MapViewTab
+            stops={stops}
+            routes={routes}
+            vehicles={vehicles}
+            selectedStop={selectedStop}
+            selectedRoute={selectedRoute}
+            userLat={userLat}
+            userLon={userLon}
+            onSelectStop={handleSelectStop}
+            onRequestLocation={requestLocation}
+            onClearRouteFilter={() => setSelectedRoute(null)}
+          />
+        )}
+
+        {/* Tab 5: Marquesina Rápida (Teclado Táctil) */}
+        {activeTab === 'marquesina' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <MarquesinaDial
+              stops={stops}
+              onSelectStop={handleSelectStop}
+            />
+          </div>
+        )}
+
+        {/* Tab 6: Favorites */}
         {activeTab === 'favorites' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="pb-2 border-b border-slate-800">
@@ -261,7 +240,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 5: Alerts & Disruptions */}
+        {/* Tab 7: Alerts & Disruptions */}
         {activeTab === 'alerts' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <AlertsView />
@@ -276,7 +255,19 @@ export const App: React.FC = () => {
         isFavorite={selectedStop ? isFavoriteStop(selectedStop.code) : false}
         onToggleFavorite={toggleFavoriteStop}
         onViewOnMap={handleViewStopOnMap}
+        onSetAlarm={setAlarmForStop}
+        onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
       />
+
+      {/* Live ETA Sharing Modal */}
+      {sharingData && (
+        <ShareArrivalModal
+          isOpen={Boolean(sharingData)}
+          onClose={() => setSharingData(null)}
+          stop={sharingData.stop}
+          arrival={sharingData.arrival}
+        />
+      )}
     </div>
   );
 };

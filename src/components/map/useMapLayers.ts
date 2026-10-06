@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import type { BusStop, BusRoute, LiveVehicle } from '../../types/bus.ts';
+import { getBusFleetInfo, parseOccupancy } from '../../utils/fleet.ts';
 
 interface MapLayersProps {
   map: L.Map | null;
@@ -14,6 +15,16 @@ interface MapLayersProps {
   userLat: number | null;
   userLon: number | null;
   onSelectStop: (stop: BusStop) => void;
+}
+
+interface InterpolatedVehicle {
+  marker: L.Marker;
+  startLat: number;
+  startLon: number;
+  targetLat: number;
+  targetLon: number;
+  startTime: number;
+  duration: number;
 }
 
 export function useMapLayers({
@@ -32,6 +43,10 @@ export function useMapLayers({
   const userMarkerRef = useRef<L.Marker | null>(null);
   const accuracyCircleRef = useRef<L.Circle | null>(null);
   const routePolylineRef = useRef<L.Polyline | null>(null);
+
+  // Persistent vehicle markers for smooth kinematic interpolation
+  const vehicleTrackerRef = useRef<Map<string, InterpolatedVehicle>>(new Map());
+  const animFrameRef = useRef<number | null>(null);
 
   const onSelectStopRef = useRef(onSelectStop);
   useEffect(() => {
@@ -71,11 +86,13 @@ export function useMapLayers({
     }
   }, [map, userLat, userLon]);
 
-  // Real-time vehicles layer
+  // Real-time vehicles with Kinematic Smooth Interpolation
   useEffect(() => {
     if (!vehiclesLayer) return;
 
-    vehiclesLayer.clearLayers();
+    const tracker = vehicleTrackerRef.current;
+    const now = performance.now();
+    const activeVehicleIds = new Set<string>();
 
     const vehiclesToDisplay = selectedRoute
       ? vehicles.filter(
@@ -86,57 +103,120 @@ export function useMapLayers({
     for (const v of vehiclesToDisplay) {
       if (!v.lat || !v.lon) continue;
 
-      const markerHtml = `
-        <div style="
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: ${v.routeColor || '#008075'};
-          color: ${v.routeTextColor || '#FFFFFF'};
-          border: 2px solid #ffffff;
-          border-radius: 8px;
-          padding: 2px 6px;
-          font-weight: 800;
-          font-size: 11px;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-          cursor: pointer;
-          white-space: nowrap;
-        ">
-          <span>${v.lineName}</span>
-        </div>
-      `;
+      const vehicleKey = v.id || v.vehicleId;
+      activeVehicleIds.add(vehicleKey);
 
-      const icon = L.divIcon({
-        className: 'bus-vehicle-pin',
-        html: markerHtml,
-        iconSize: [32, 22],
-        iconAnchor: [16, 11],
-      });
-
-      const marker = L.marker([v.lat, v.lon], { icon });
+      const fleet = getBusFleetInfo(v.vehicleId);
+      const occupancy = parseOccupancy(v.occupancy);
 
       const popupContent = `
         <div style="font-size: 13px; font-weight: 500; line-height: 1.4; padding: 2px;">
-          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-            <span style="background: ${v.routeColor}; color: ${v.routeTextColor}; padding: 1px 6px; border-radius: 6px; font-weight: 800; font-size: 11px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px;">
+            <span style="background: ${v.routeColor || '#008075'}; color: ${v.routeTextColor || '#FFFFFF'}; padding: 1px 6px; border-radius: 6px; font-weight: 800; font-size: 11px;">
               Línea ${v.lineName}
             </span>
-            <span style="color: #10b981; font-weight: 700; font-size: 11px;">● En Vivo</span>
+            <span style="color: ${occupancy.iconColor}; font-weight: 700; font-size: 10px;">
+              ● ${occupancy.label}
+            </span>
           </div>
           <div style="font-weight: 700; color: #ffffff; margin-bottom: 2px;">${v.headsign || 'En servicio'}</div>
-          <div style="font-size: 11px; color: #94a3b8;">
-            Matrícula: <strong style="color: #cbd5e1;">${v.licensePlate || 'N/D'}</strong><br/>
+          <div style="font-size: 11px; color: #94a3b8; line-height: 1.4;">
+            Modelo: <strong style="color: #cbd5e1;">${fleet.model} (${fleet.propulsion})</strong><br/>
+            Matrícula: <strong style="color: #cbd5e1;">${v.licensePlate || 'N/D'}</strong> |
             Velocidad: <strong style="color: #cbd5e1;">${v.speed} km/h</strong>
           </div>
         </div>
       `;
 
-      marker.bindPopup(popupContent);
-      vehiclesLayer.addLayer(marker);
+      if (tracker.has(vehicleKey)) {
+        // Vehicle already exists: smoothly interpolate to new target GPS point
+        const entry = tracker.get(vehicleKey)!;
+        entry.startLat = entry.marker.getLatLng().lat;
+        entry.startLon = entry.marker.getLatLng().lng;
+        entry.targetLat = v.lat;
+        entry.targetLon = v.lon;
+        entry.startTime = now;
+        entry.duration = 8500; // interpolate over 8.5 seconds
+        entry.marker.setPopupContent(popupContent);
+      } else {
+        // New vehicle entering route
+        const markerHtml = `
+          <div style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: ${v.routeColor || '#008075'};
+            color: ${v.routeTextColor || '#FFFFFF'};
+            border: 2px solid #ffffff;
+            border-radius: 8px;
+            padding: 2px 6px;
+            font-weight: 800;
+            font-size: 11px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            cursor: pointer;
+            white-space: nowrap;
+          ">
+            <span>${v.lineName}</span>
+          </div>
+        `;
+
+        const icon = L.divIcon({
+          className: 'bus-vehicle-pin',
+          html: markerHtml,
+          iconSize: [32, 22],
+          iconAnchor: [16, 11],
+        });
+
+        const marker = L.marker([v.lat, v.lon], { icon });
+        marker.bindPopup(popupContent);
+        vehiclesLayer.addLayer(marker);
+
+        tracker.set(vehicleKey, {
+          marker,
+          startLat: v.lat,
+          startLon: v.lon,
+          targetLat: v.lat,
+          targetLon: v.lon,
+          startTime: now,
+          duration: 8500,
+        });
+      }
     }
 
+    // Remove obsolete vehicles
+    for (const [key, entry] of tracker.entries()) {
+      if (!activeVehicleIds.has(key)) {
+        vehiclesLayer.removeLayer(entry.marker);
+        tracker.delete(key);
+      }
+    }
+
+    // Kinematic Animation Loop (Smooth Lerp)
+    const animateVehicles = (currentTime: number) => {
+      for (const entry of tracker.values()) {
+        const elapsed = currentTime - entry.startTime;
+        const progress = Math.min(1, Math.max(0, elapsed / entry.duration));
+
+        // Smooth cubic ease-out
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const curLat = entry.startLat + (entry.targetLat - entry.startLat) * ease;
+        const curLon = entry.startLon + (entry.targetLon - entry.startLon) * ease;
+
+        entry.marker.setLatLng([curLat, curLon]);
+      }
+
+      animFrameRef.current = requestAnimationFrame(animateVehicles);
+    };
+
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+    }
+    animFrameRef.current = requestAnimationFrame(animateVehicles);
+
     return () => {
-      vehiclesLayer.clearLayers();
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
     };
   }, [vehiclesLayer, vehicles, selectedRoute]);
 
@@ -159,7 +239,6 @@ export function useMapLayers({
       stopsToRender = stops.filter(s => routeStopCodes.has(s.code));
     }
 
-    // Map each stop to marker
     const stopByLatLng = new Map<string, BusStop>();
 
     for (const stop of stopsToRender) {
@@ -195,7 +274,6 @@ export function useMapLayers({
       stopsLayer.addLayer(marker);
     }
 
-    // Delegated click handler on the layer group with guaranteed cleanup
     const handleLayerClick = (e: L.LeafletEvent) => {
       const latlng = (e as L.LeafletMouseEvent).latlng;
       if (!latlng) return;

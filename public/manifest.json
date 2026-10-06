@@ -1,0 +1,18 @@
+{
+  "name": "VallaBus — AUVASA Valladolid",
+  "short_name": "VallaBus",
+  "description": "Control en tiempo real de los autobuses urbanos AUVASA de Valladolid. Tiempos satelitales GPS, mapa interactivo y buscador.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#008075",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/bus-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
