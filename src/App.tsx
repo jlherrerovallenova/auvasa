@@ -117,8 +117,10 @@ export const App: React.FC = () => {
 
   // Quick popular lines for Valladolid
   const popularLines = useMemo(() => {
-    const popularKeys = ['1', '2', 'C1', 'C2', '8', 'B1'];
-    return routes.filter(r => popularKeys.includes(r.shortName)).slice(0, 6);
+    const popularKeys = ['1', '2', '7', '9', '18', '19'];
+    return popularKeys
+      .map(key => routes.find(r => r.shortName === key))
+      .filter((r): r is BusRoute => Boolean(r));
   }, [routes]);
 
   return (
