@@ -227,11 +227,12 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
       getAudioContext();
 
       // Determine direction
+      const originCode = 'code' in originStop ? originStop.code : originStop.stopCode;
       const dirKey =
         directionKey ||
         Object.keys(route.directions || {}).find(k => {
           const dir = route.directions[k];
-          return dir.stops?.some(s => s.stopCode === originStop.code || s.stopCode === (originStop as RouteStop).stopCode);
+          return dir.stops?.some(s => s.stopCode === originCode);
         }) ||
         '0';
 
@@ -239,7 +240,6 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
       const allStops = dirInfo.stops || [];
 
       // Find origin index
-      const originCode = 'code' in originStop ? originStop.code : originStop.stopCode;
       let originIdx = allStops.findIndex(s => s.stopCode === originCode);
       if (originIdx < 0) originIdx = 0;
 

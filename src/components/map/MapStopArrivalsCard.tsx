@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle, ChevronDown, Bus } from 'lucide-react';
 import type { BusStop, StopArrival } from '../../types/bus.ts';
 import { useStopArrivals } from '../../hooks/useStopArrivals.ts';
+import { getBusFleetInfo } from '../../utils/fleet.ts';
+import { BusDrawing } from '../BusDrawing.tsx';
 
 interface MapStopArrivalsCardProps {
   stop: BusStop;
@@ -179,6 +181,7 @@ export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
           <div className="space-y-1.5">
             {data.arrivals.map(arr => {
               const isArriving = arr.minutesRemaining <= 0;
+              const fleet = getBusFleetInfo(arr.vehicleId);
               const uniqueKey = `${arr.routeShortName}_${arr.timestamp}_${arr.exactTime}_${arr.isRealtime ? 'rt' : 'sc'}`;
 
               return (
@@ -186,14 +189,16 @@ export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
                   key={uniqueKey}
                   className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-750 transition-colors flex items-center justify-between gap-2 shadow-2xs"
                 >
-                  {/* Left: Line badge & Destination */}
+                  {/* Left: Bus Drawing & Destination */}
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span
-                      className="w-9 h-7 rounded-lg font-black text-xs flex items-center justify-center shadow-xs shrink-0 tracking-tight"
-                      style={{ backgroundColor: arr.routeColor || '#008075', color: arr.routeTextColor || '#FFFFFF' }}
-                    >
-                      {arr.routeShortName}
-                    </span>
+                    <BusDrawing
+                      fleet={fleet}
+                      lineName={arr.routeShortName}
+                      routeColor={arr.routeColor || '#008075'}
+                      routeTextColor={arr.routeTextColor || '#FFFFFF'}
+                      vehicleId={arr.vehicleId}
+                      className="shrink-0 drop-shadow-2xs"
+                    />
                     <div className="min-w-0 flex-1">
                       <span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
                         {arr.destination || `Línea ${arr.routeShortName}`}
@@ -202,12 +207,7 @@ export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
                         {arr.isRealtime ? (
                           <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold truncate">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                            <span>GPS en directo</span>
-                            {arr.licensePlate && (
-                              <span className="text-slate-400 dark:text-slate-500 font-mono text-[9px] shrink-0">
-                                ({arr.licensePlate})
-                              </span>
-                            )}
+                            <span>GPS ({fleet.model})</span>
                           </span>
                         ) : (
                           <span className="text-amber-600 dark:text-amber-400/90 flex items-center gap-1 font-medium truncate">

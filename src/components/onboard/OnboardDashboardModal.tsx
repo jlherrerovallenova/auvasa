@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  X,
   ChevronDown,
   Volume2,
   VolumeX,
@@ -12,12 +11,9 @@ import {
   BellRing,
   Flag,
   CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Radio,
 } from 'lucide-react';
 import type { OnboardTrip, OnboardMetrics } from '../../types/onboard.ts';
 import type { RouteStop } from '../../types/bus.ts';

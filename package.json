@@ -17,6 +17,8 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "ask-sdk-core": "^2.14.0",
+    "ask-sdk-express-adapter": "^2.14.0",
     "axios": "^1.20.0",
     "concurrently": "^10.0.5",
     "cors": "^2.8.6",

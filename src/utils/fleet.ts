@@ -1,74 +1,137 @@
+export type BusTypeKey =
+  | 'irizar-ie-tram-articulated'
+  | 'irizar-ie-tram-standard'
+  | 'solaris-urbino-hybrid'
+  | 'man-lions-city-gnc'
+  | 'mercedes-citaro-gnc'
+  | 'vectia-hybrid'
+  | 'articulated-gnc'
+  | 'standard-urban';
+
 export interface BusFleetInfo {
+  typeKey: BusTypeKey;
   model: string;
-  propulsion: '100% Eléctrico' | 'Híbrido GNC' | 'Híbrido' | 'Diésel Euro VI' | 'Estándar';
+  propulsion: '100% Eléctrico' | 'Híbrido GNC' | 'Híbrido' | 'Gas Natural (GNC)' | 'Diésel Euro VI' | 'Estándar';
   isArticulated: boolean;
   hasPMR: boolean;
   badgeColor: string;
+  propulsionIcon: 'zap' | 'leaf' | 'flame' | 'bus';
 }
 
 export function getBusFleetInfo(vehicleId?: string | null): BusFleetInfo {
   if (!vehicleId) {
     return {
-      model: 'AUVASA Urbano',
-      propulsion: 'Estándar',
+      typeKey: 'standard-urban',
+      model: 'AUVASA Urbano GNC',
+      propulsion: 'Gas Natural (GNC)',
       isArticulated: false,
       hasPMR: true,
       badgeColor: '#008075',
+      propulsionIcon: 'flame',
     };
   }
 
   const num = parseInt(vehicleId, 10);
 
-  // 300-399: Irizar ie Tram 100% Eléctricos (Flota Cero Emisiones Valladolid)
-  if (num >= 300 && num <= 399) {
+  // 337-352: Irizar ie Tram 18m Articulado 100% Eléctrico (C1, C2, etc.)
+  if (num >= 337 && num <= 352) {
     return {
-      model: 'Irizar ie Tram Eléctrico',
+      typeKey: 'irizar-ie-tram-articulated',
+      model: 'Irizar ie Tram 18m Eléctrico',
       propulsion: '100% Eléctrico',
-      isArticulated: num >= 350,
-      hasPMR: true,
-      badgeColor: '#10b981',
-    };
-  }
-
-  // 700-799: Articulados Oruga 18m (C1, C2, Línea 1, 8)
-  if (num >= 700 && num <= 799) {
-    return {
-      model: 'Articulado Oruga 18m',
-      propulsion: 'Híbrido GNC',
       isArticulated: true,
       hasPMR: true,
-      badgeColor: '#3b82f6',
+      badgeColor: '#10b981',
+      propulsionIcon: 'zap',
     };
   }
 
-  // 600-699: MAN Lion's City GNC Híbrido
-  if (num >= 600 && num <= 699) {
+  // 353-399: Irizar ie Tram 12m Estándar 100% Eléctrico (Líneas 2, 6, etc.)
+  if (num >= 353 && num <= 399) {
     return {
-      model: "MAN Lion's City GNC",
-      propulsion: 'Híbrido GNC',
+      typeKey: 'irizar-ie-tram-standard',
+      model: 'Irizar ie Tram 12m Eléctrico',
+      propulsion: '100% Eléctrico',
       isArticulated: false,
       hasPMR: true,
-      badgeColor: '#06b6d4',
+      badgeColor: '#10b981',
+      propulsionIcon: 'zap',
     };
   }
 
-  // 400-499: Solaris Urbino Híbrido
+  // 301-336: Vectia Teris / Veris Híbridos / Eléctricos
+  if (num >= 300 && num <= 336) {
+    return {
+      typeKey: 'vectia-hybrid',
+      model: 'Vectia Híbrido Eléctrico',
+      propulsion: 'Híbrido',
+      isArticulated: false,
+      hasPMR: true,
+      badgeColor: '#14b8a6',
+      propulsionIcon: 'leaf',
+    };
+  }
+
+  // 400-499: Solaris Urbino Híbrido (Líneas 1, 2, 5, 8, etc.)
   if (num >= 400 && num <= 499) {
     return {
+      typeKey: 'solaris-urbino-hybrid',
       model: 'Solaris Urbino Híbrido',
       propulsion: 'Híbrido',
       isArticulated: false,
       hasPMR: true,
       badgeColor: '#8b5cf6',
+      propulsionIcon: 'leaf',
+    };
+  }
+
+  // 600-699: MAN Lion's City 18 G / GNC Híbrido (Línea 1, etc.)
+  if (num >= 600 && num <= 699) {
+    return {
+      typeKey: 'man-lions-city-gnc',
+      model: "MAN Lion's City GNC",
+      propulsion: 'Gas Natural (GNC)',
+      isArticulated: true,
+      hasPMR: true,
+      badgeColor: '#06b6d4',
+      propulsionIcon: 'flame',
+    };
+  }
+
+  // 700-799 or 75: Articulados Oruga 18m
+  if ((num >= 700 && num <= 799) || num === 75) {
+    return {
+      typeKey: 'articulated-gnc',
+      model: 'Articulado Oruga 18m',
+      propulsion: 'Híbrido GNC',
+      isArticulated: true,
+      hasPMR: true,
+      badgeColor: '#3b82f6',
+      propulsionIcon: 'bus',
+    };
+  }
+
+  // 200-299: Mercedes Citaro C2 GNC
+  if (num >= 200 && num <= 299) {
+    return {
+      typeKey: 'mercedes-citaro-gnc',
+      model: 'Mercedes Citaro C2 GNC',
+      propulsion: 'Gas Natural (GNC)',
+      isArticulated: false,
+      hasPMR: true,
+      badgeColor: '#0284c7',
+      propulsionIcon: 'flame',
     };
   }
 
   return {
-    model: 'AUVASA Estándar',
-    propulsion: 'Diésel Euro VI',
+    typeKey: 'standard-urban',
+    model: 'AUVASA Castrosua GNC',
+    propulsion: 'Gas Natural (GNC)',
     isArticulated: false,
     hasPMR: true,
     badgeColor: '#64748b',
+    propulsionIcon: 'flame',
   };
 }
 

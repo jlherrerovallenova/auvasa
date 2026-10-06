@@ -275,15 +275,21 @@ router.get('/stops', (req, res) => {
   });
 });
 
-// Real-time arrivals for a stop
-router.get('/stops/:stopCode/arrivals', async (req, res) => {
-  await ensureRealtimeData();
-  const { stopCode } = req.params;
-  const stopObj = stopByCode.get(stopCode);
+// Helper for searching stops by name
+function searchStopsByName(query) {
+  if (!query) return [];
+  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return stopsData.filter(s => {
+    const nameNorm = s.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return nameNorm.includes(q);
+  });
+}
 
-  if (!stopObj) {
-    return res.status(404).json({ error: 'Parada no encontrada con código ' + stopCode });
-  }
+// Calculate real-time arrivals for a stop
+async function calculateStopArrivals(stopCode) {
+  await ensureRealtimeData();
+  const stopObj = stopByCode.get(stopCode);
+  if (!stopObj) return null;
 
   const nowSec = Math.floor(Date.now() / 1000);
   const nowMadrid = new Date();
@@ -377,7 +383,7 @@ router.get('/stops/:stopCode/arrivals', async (req, res) => {
     .sort((a, b) => a.secondsRemaining - b.secondsRemaining)
     .slice(0, 15);
 
-  res.json({
+  return {
     stopCode: stopObj.code,
     stopName: stopObj.name,
     lat: stopObj.lat,
@@ -386,7 +392,17 @@ router.get('/stops/:stopCode/arrivals', async (req, res) => {
     updatedAt: new Date().toISOString(),
     realtimeCount: realTimeArrivals.length,
     arrivals: allArrivals,
-  });
+  };
+}
+
+// Real-time arrivals for a stop
+router.get('/stops/:stopCode/arrivals', async (req, res) => {
+  const { stopCode } = req.params;
+  const data = await calculateStopArrivals(stopCode);
+  if (!data) {
+    return res.status(404).json({ error: 'Parada no encontrada con código ' + stopCode });
+  }
+  res.json(data);
 });
 
 // All active vehicles
@@ -408,6 +424,24 @@ router.get('/realtime/alerts', async (req, res) => {
     alerts: rtState.alerts,
   });
 });
+
+// Initialize Alexa Skill Integration
+import { createAlexaSkill } from './alexa.mjs';
+
+const { handler: alexaHandler } = createAlexaSkill({
+  getStopArrivals: calculateStopArrivals,
+  getStopByCode: (code) => stopByCode.get(code),
+  searchStopsByName,
+  getAlerts: async () => {
+    await ensureAlertsData();
+    return rtState.alerts;
+  },
+  getLines: () => routesData,
+});
+
+// Alexa Webhook Endpoint
+app.post('/api/alexa', alexaHandler);
+app.post('/alexa', alexaHandler);
 
 // Mount router on both /api and / to handle direct and rewritten requests seamlessly
 app.use('/api', router);

@@ -1,4 +1,4 @@
-import type { BusRoute, RouteStop, LiveVehicle, BusStop } from './bus.ts';
+import type { BusRoute, RouteStop, BusStop } from './bus.ts';
 
 export interface OnboardTrip {
   id: string;

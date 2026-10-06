@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Bus, MapPin, Search, ArrowRight, ShieldCheck, Flag } from 'lucide-react';
+import { X, Bus, Search, ArrowRight, Flag } from 'lucide-react';
 import type { BusRoute, RouteStop, BusStop } from '../../types/bus.ts';
 
 interface OnboardSetupModalProps {

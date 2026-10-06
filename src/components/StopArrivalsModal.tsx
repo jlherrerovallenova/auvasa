@@ -3,6 +3,7 @@ import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Share2, Za
 import type { BusStop, StopArrival } from '../types/bus.ts';
 import { useStopArrivals } from '../hooks/useStopArrivals.ts';
 import { getBusFleetInfo, parseOccupancy } from '../utils/fleet.ts';
+import { BusDrawing } from './BusDrawing.tsx';
 
 interface StopArrivalsModalProps {
   stop: BusStop | null;
@@ -30,14 +31,16 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
   return (
     <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/70 transition-colors space-y-2.5 shadow-sm dark:shadow-md">
       <div className="flex items-center justify-between gap-2.5">
-        {/* Left: Line and Destination */}
+        {/* Left: Bus illustration and Destination */}
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-          <span
-            className="w-11 h-9 rounded-xl font-black text-sm flex items-center justify-center shadow-md flex-shrink-0 tracking-tight"
-            style={{ backgroundColor: arr.routeColor, color: arr.routeTextColor }}
-          >
-            {arr.routeShortName}
-          </span>
+          <BusDrawing
+            fleet={fleet}
+            lineName={arr.routeShortName}
+            routeColor={arr.routeColor}
+            routeTextColor={arr.routeTextColor}
+            vehicleId={arr.vehicleId}
+            className="shrink-0 drop-shadow-sm"
+          />
           <div className="min-w-0 flex-1">
             <span className="font-bold text-slate-900 dark:text-white text-sm block truncate">
               {arr.destination || `Línea ${arr.routeShortName}`}

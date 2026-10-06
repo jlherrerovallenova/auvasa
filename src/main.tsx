@@ -14,16 +14,24 @@ if (rootElement) {
     </React.StrictMode>
   );
 
-  if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then(reg => {
-          reg.update();
-        })
-        .catch(() => {
-          // SW registration failed
-        });
-    });
+  if ('serviceWorker' in navigator) {
+    if (import.meta.env.PROD) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then(reg => {
+            reg.update();
+          })
+          .catch(() => {
+            // SW registration failed
+          });
+      });
+    } else {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
   }
 }

@@ -29,6 +29,16 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
+  // Skip non-GET requests and dev/Vite specific requests
+  if (
+    event.request.method !== 'GET' ||
+    url.pathname.includes('/node_modules/') ||
+    url.pathname.startsWith('/@') ||
+    url.search.includes('token=')
+  ) {
+    return;
+  }
+
   // 1. Network-first for HTML document navigation to ensure users always get the latest build
   if (
     event.request.mode === 'navigate' ||
@@ -64,10 +74,7 @@ self.addEventListener('fetch', event => {
   }
 
   // 3. Cache-first for local static assets (hashed JS, CSS, icons)
-  if (
-    event.request.method === 'GET' &&
-    (url.pathname.startsWith('/assets/') || STATIC_ASSETS.includes(url.pathname))
-  ) {
+  if (url.pathname.startsWith('/assets/') || STATIC_ASSETS.includes(url.pathname)) {
     event.respondWith(
       caches.match(event.request).then(cached => {
         return (
@@ -82,7 +89,4 @@ self.addEventListener('fetch', event => {
     );
     return;
   }
-
-  // 4. Default network pass-through
-  event.respondWith(fetch(event.request));
 });

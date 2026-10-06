@@ -1,0 +1,130 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "vallabus",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": [
+            "cancelar",
+            "cancela",
+            "parar",
+            "para"
+          ]
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": [
+            "ayuda",
+            "qué puedes hacer",
+            "cómo funciona",
+            "ayúdame"
+          ]
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": [
+            "adiós",
+            "salir",
+            "terminar",
+            "hasta luego"
+          ]
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "GetStopArrivalsIntent",
+          "slots": [
+            {
+              "name": "StopNumber",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "StopName",
+              "type": "AMAZON.StreetName"
+            }
+          ],
+          "samples": [
+            "cuándo pasa el próximo autobús por la parada {StopNumber}",
+            "cuándo llega el bus en la parada {StopNumber}",
+            "tiempos de la parada {StopNumber}",
+            "parada {StopNumber}",
+            "parada número {StopNumber}",
+            "qué autobuses vienen a la parada {StopNumber}",
+            "cuándo pasa el autobús por {StopName}",
+            "cuándo llega el bus a {StopName}",
+            "tiempos en {StopName}",
+            "próximos autobuses en {StopName}"
+          ]
+        },
+        {
+          "name": "GetLineAtStopIntent",
+          "slots": [
+            {
+              "name": "LineNumber",
+              "type": "AUVASA_LINE"
+            },
+            {
+              "name": "StopNumber",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "StopName",
+              "type": "AMAZON.StreetName"
+            }
+          ],
+          "samples": [
+            "cuándo pasa la línea {LineNumber} por la parada {StopNumber}",
+            "cuándo llega la línea {LineNumber} a la parada {StopNumber}",
+            "cuánto falta para la línea {LineNumber} en la parada {StopNumber}",
+            "cuándo pasa la línea {LineNumber} por {StopName}",
+            "cuándo llega el {LineNumber} en {StopName}",
+            "cuánto falta para la línea {LineNumber} en {StopName}",
+            "tiempo de la línea {LineNumber} en {StopName}"
+          ]
+        },
+        {
+          "name": "GetAlertsIntent",
+          "slots": [],
+          "samples": [
+            "hay incidencias en los autobuses",
+            "hay cortes o desvíos en auvasa",
+            "avisos de auvasa",
+            "avisos del servicio",
+            "hay huelga o cortes hoy"
+          ]
+        }
+      ],
+      "types": [
+        {
+          "name": "AUVASA_LINE",
+          "values": [
+            { "name": { "value": "1", "synonyms": ["uno", "línea uno", "el uno"] } },
+            { "name": { "value": "2", "synonyms": ["dos", "línea dos", "el dos"] } },
+            { "name": { "value": "3", "synonyms": ["tres", "línea tres", "el tres"] } },
+            { "name": { "value": "4", "synonyms": ["cuatro", "línea cuatro", "el cuatro"] } },
+            { "name": { "value": "5", "synonyms": ["cinco", "línea cinco", "el cinco"] } },
+            { "name": { "value": "6", "synonyms": ["seis", "línea seis", "el seis"] } },
+            { "name": { "value": "7", "synonyms": ["siete", "línea siete", "el siete"] } },
+            { "name": { "value": "8", "synonyms": ["ocho", "línea ocho", "el ocho"] } },
+            { "name": { "value": "9", "synonyms": ["nueve", "línea nueve", "el nueve"] } },
+            { "name": { "value": "10", "synonyms": ["diez", "línea diez", "el diez"] } },
+            { "name": { "value": "14", "synonyms": ["catorce", "línea catorce"] } },
+            { "name": { "value": "16", "synonyms": ["dieciséis", "línea dieciséis"] } },
+            { "name": { "value": "18", "synonyms": ["dieciocho", "línea dieciocho"] } },
+            { "name": { "value": "19", "synonyms": ["diecinueve", "línea diecinueve"] } },
+            { "name": { "value": "C1", "synonyms": ["circular uno", "circular 1", "c uno", "c 1"] } },
+            { "name": { "value": "C2", "synonyms": ["circular dos", "circular 2", "c dos", "c 2"] } },
+            { "name": { "value": "H", "synonyms": ["hache", "línea hache", "hospital"] } },
+            { "name": { "value": "B1", "synonyms": ["búho uno", "búho 1", "b 1"] } },
+            { "name": { "value": "B2", "synonyms": ["búho dos", "búho 2", "b 2"] } },
+            { "name": { "value": "B3", "synonyms": ["búho tres", "búho 3", "b 3"] } },
+            { "name": { "value": "B4", "synonyms": ["búho cuatro", "búho 4", "b 4"] } }
+          ]
+        }
+      ]
+    }
+  }
+}

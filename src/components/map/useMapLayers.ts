@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import type { BusStop, BusRoute, LiveVehicle } from '../../types/bus.ts';
 import { getBusFleetInfo, parseOccupancy } from '../../utils/fleet.ts';
+import { getBusMarkerHtml } from '../../utils/busIcons.ts';
 
 interface MapLayersProps {
   map: L.Map | null;
@@ -109,21 +110,56 @@ export function useMapLayers({
       const fleet = getBusFleetInfo(v.vehicleId);
       const occupancy = parseOccupancy(v.occupancy);
 
+      const isArticulated = fleet.isArticulated || fleet.typeKey === 'irizar-ie-tram-articulated' || fleet.typeKey === 'articulated-gnc';
+      const markerWidth = isArticulated ? 98 : 72;
+      const markerHeight = 36;
+
+      const markerHtml = getBusMarkerHtml({
+        fleet,
+        lineName: v.lineName,
+        routeColor: v.routeColor || '#008075',
+        routeTextColor: v.routeTextColor || '#FFFFFF',
+        vehicleId: v.vehicleId,
+        speed: v.speed,
+        bearing: v.bearing,
+      });
+
+      const icon = L.divIcon({
+        className: 'bus-vehicle-pin',
+        html: markerHtml,
+        iconSize: [markerWidth, markerHeight],
+        iconAnchor: [markerWidth / 2, markerHeight / 2],
+      });
+
       const popupContent = `
-        <div style="font-size: 13px; font-weight: 500; line-height: 1.4; padding: 2px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px;">
-            <span style="background: ${v.routeColor || '#008075'}; color: ${v.routeTextColor || '#FFFFFF'}; padding: 1px 6px; border-radius: 6px; font-weight: 800; font-size: 11px;">
+        <div style="font-size: 13px; font-weight: 500; line-height: 1.4; padding: 4px; min-width: 200px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px;">
+            <span style="background: ${v.routeColor || '#008075'}; color: ${v.routeTextColor || '#FFFFFF'}; padding: 2px 8px; border-radius: 8px; font-weight: 900; font-size: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
               Línea ${v.lineName}
             </span>
-            <span style="color: ${occupancy.iconColor}; font-weight: 700; font-size: 10px;">
+            <span style="color: ${occupancy.iconColor}; font-weight: 700; font-size: 11px;">
               ● ${occupancy.label}
             </span>
           </div>
-          <div style="font-weight: 700; color: #ffffff; margin-bottom: 2px;">${v.headsign || 'En servicio'}</div>
-          <div style="font-size: 11px; color: #94a3b8; line-height: 1.4;">
-            Modelo: <strong style="color: #cbd5e1;">${fleet.model} (${fleet.propulsion})</strong><br/>
-            Matrícula: <strong style="color: #cbd5e1;">${v.licensePlate || 'N/D'}</strong> |
-            Velocidad: <strong style="color: #cbd5e1;">${v.speed} km/h</strong>
+          <div style="font-weight: 800; color: #ffffff; font-size: 14px; margin-bottom: 6px;">${v.headsign || 'En servicio'}</div>
+          
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(51, 65, 85, 0.6); border-radius: 8px; padding: 6px 8px; font-size: 11px; color: #94a3b8; line-height: 1.5;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+              <span>Modelo:</span>
+              <strong style="color: #38bdf8;">${fleet.model}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+              <span>Propulsión:</span>
+              <strong style="color: ${fleet.propulsion === '100% Eléctrico' ? '#34d399' : '#a78bfa'};">${fleet.propulsion}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+              <span>Coche / Matrícula:</span>
+              <strong style="color: #cbd5e1;">#${v.vehicleId || 'N/D'} (${v.licensePlate || 'N/D'})</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Velocidad actual:</span>
+              <strong style="color: #facc15;">${v.speed} km/h</strong>
+            </div>
           </div>
         </div>
       `;
@@ -137,36 +173,10 @@ export function useMapLayers({
         entry.targetLon = v.lon;
         entry.startTime = now;
         entry.duration = 8500; // interpolate over 8.5 seconds
+        entry.marker.setIcon(icon);
         entry.marker.setPopupContent(popupContent);
       } else {
         // New vehicle entering route
-        const markerHtml = `
-          <div style="
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: ${v.routeColor || '#008075'};
-            color: ${v.routeTextColor || '#FFFFFF'};
-            border: 2px solid #ffffff;
-            border-radius: 8px;
-            padding: 2px 6px;
-            font-weight: 800;
-            font-size: 11px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            cursor: pointer;
-            white-space: nowrap;
-          ">
-            <span>${v.lineName}</span>
-          </div>
-        `;
-
-        const icon = L.divIcon({
-          className: 'bus-vehicle-pin',
-          html: markerHtml,
-          iconSize: [32, 22],
-          iconAnchor: [16, 11],
-        });
-
         const marker = L.marker([v.lat, v.lon], { icon });
         marker.bindPopup(popupContent);
         vehiclesLayer.addLayer(marker);
