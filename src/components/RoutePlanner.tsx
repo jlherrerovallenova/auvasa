@@ -183,7 +183,7 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
 
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-slate-900 dark:text-white leading-snug">{step.description}</p>
-                          <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                             <button
                               type="button"
                               onClick={() => {

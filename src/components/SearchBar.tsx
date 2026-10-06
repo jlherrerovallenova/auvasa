@@ -102,23 +102,23 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     }}
                     className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 text-left transition-colors group cursor-pointer"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <span
-                        className="w-9 h-7 rounded-lg font-black text-sm flex items-center justify-center shadow-md flex-shrink-0"
+                        className="w-9 h-7 rounded-lg font-black text-sm flex items-center justify-center shadow-md shrink-0"
                         style={{ backgroundColor: route.color, color: route.textColor }}
                       >
                         {route.shortName}
                       </span>
-                      <div>
-                        <span className="font-semibold text-slate-900 dark:text-white text-sm block group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-semibold text-slate-900 dark:text-white text-sm block group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors truncate">
                           {route.name}
                         </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">
                           {route.origin} ↔ {route.destination}
                         </span>
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-transform group-hover:translate-x-0.5" />
+                    <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-transform group-hover:translate-x-0.5 shrink-0" />
                   </button>
                 ))}
               </div>
@@ -142,16 +142,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     }}
                     className="w-full flex items-start justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 text-left transition-colors group cursor-pointer"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-500/40 text-teal-700 dark:text-teal-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-500/40 text-teal-700 dark:text-teal-400 flex items-center justify-center shrink-0 mt-0.5">
                         <MapPin className="w-4 h-4" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-300 font-mono font-bold text-xs px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-300 font-mono font-bold text-xs px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 shrink-0">
                             #{stop.code}
                           </span>
-                          <span className="font-medium text-slate-900 dark:text-white text-sm group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
+                          <span className="font-medium text-slate-900 dark:text-white text-sm group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors truncate">
                             {stop.name}
                           </span>
                         </div>
@@ -172,7 +172,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         </div>
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-transform group-hover:translate-x-0.5 flex-shrink-0 mt-1" />
+                    <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-transform group-hover:translate-x-0.5 shrink-0 mt-1" />
                   </button>
                 ))}
               </div>

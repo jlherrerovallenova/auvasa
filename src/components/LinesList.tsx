@@ -146,22 +146,22 @@ export const LinesList: React.FC<LinesListProps> = ({
         {activeLine && (
           <div className="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xl h-fit transition-colors">
             {/* Header of Active Line */}
-            <div className="flex items-start justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-3">
+            <div className="flex items-start justify-between gap-2.5 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <span
-                  className="w-14 h-12 rounded-2xl font-black text-xl flex items-center justify-center shadow-lg"
+                  className="w-12 h-10 sm:w-14 sm:h-12 rounded-2xl font-black text-lg sm:text-xl flex items-center justify-center shadow-lg shrink-0"
                   style={{ backgroundColor: activeLine.color, color: activeLine.textColor }}
                 >
                   {activeLine.shortName}
                 </span>
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-tight truncate">
                     {activeLine.name}
                   </h3>
                   <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                      <Radio className="w-3.5 h-3.5" />
-                      {activeLineVehicles.length} autobuses activos en GPS
+                    <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold truncate">
+                      <Radio className="w-3.5 h-3.5 shrink-0" />
+                      <span>{activeLineVehicles.length} autobuses activos en GPS</span>
                     </span>
                   </div>
                 </div>
@@ -170,7 +170,7 @@ export const LinesList: React.FC<LinesListProps> = ({
               <button
                 type="button"
                 onClick={() => onSelectRouteForMap(activeLine)}
-                className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors shadow-md shadow-teal-700/30 cursor-pointer"
+                className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors shadow-md shadow-teal-700/30 cursor-pointer shrink-0"
                 aria-label={`Ver mapa de la línea ${activeLine.shortName}`}
               >
                 <Map className="w-3.5 h-3.5" />
@@ -184,7 +184,7 @@ export const LinesList: React.FC<LinesListProps> = ({
                 <button
                   type="button"
                   onClick={() => setDirectionIndex('0')}
-                  className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-colors text-left flex items-center gap-2 cursor-pointer ${
+                  className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs font-bold transition-colors text-left flex items-center gap-2 cursor-pointer ${
                     directionIndex === '0'
                       ? 'bg-teal-600 text-white shadow-md'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -201,7 +201,7 @@ export const LinesList: React.FC<LinesListProps> = ({
                 <button
                   type="button"
                   onClick={() => setDirectionIndex('1')}
-                  className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-colors text-left flex items-center gap-2 cursor-pointer ${
+                  className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs font-bold transition-colors text-left flex items-center gap-2 cursor-pointer ${
                     directionIndex === '1'
                       ? 'bg-teal-600 text-white shadow-md'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -246,11 +246,11 @@ export const LinesList: React.FC<LinesListProps> = ({
                       onClick={() => {
                         if (fullStop) onSelectStop(fullStop);
                       }}
-                      className="flex-1 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors text-left cursor-pointer flex items-center justify-between gap-2"
+                      className="flex-1 min-w-0 p-2 sm:p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors text-left cursor-pointer flex items-center justify-between gap-2"
                     >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-teal-700 dark:text-teal-400 font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded border border-slate-200 dark:border-slate-700">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-mono text-xs text-teal-700 dark:text-teal-400 font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 shrink-0">
                             #{stopItem.stopCode}
                           </span>
                           <span className="font-semibold text-slate-900 dark:text-white text-sm group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors truncate">
@@ -259,8 +259,9 @@ export const LinesList: React.FC<LinesListProps> = ({
                         </div>
                       </div>
 
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 font-medium whitespace-nowrap">
-                        Ver tiempos →
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 font-medium whitespace-nowrap shrink-0 flex items-center gap-0.5">
+                        <span className="hidden sm:inline">Ver tiempos</span>
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400" />
                       </span>
                     </button>
                   </div>

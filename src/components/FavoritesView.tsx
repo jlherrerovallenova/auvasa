@@ -65,16 +65,16 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                     className="flex items-center gap-3 min-w-0 text-left flex-1 cursor-pointer"
                   >
                     <span
-                      className="w-11 h-9 rounded-xl font-black text-sm flex items-center justify-center shadow-md flex-shrink-0"
+                      className="w-11 h-9 rounded-xl font-black text-sm flex items-center justify-center shadow-md shrink-0"
                       style={{ backgroundColor: route.color, color: route.textColor }}
                     >
                       {route.shortName}
                     </span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <span className="font-bold text-slate-900 dark:text-white text-sm block truncate">
                         {route.name}
                       </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">
                         {route.origin} ↔ {route.destination}
                       </span>
                     </div>
@@ -83,7 +83,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                   <button
                     type="button"
                     onClick={() => onToggleFavoriteLine(lineId)}
-                    className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
                     aria-label={`Eliminar línea ${route.shortName} de favoritos`}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -118,10 +118,10 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                     onClick={() => onSelectStop(stop)}
                     className="flex items-start gap-3 min-w-0 text-left flex-1 cursor-pointer"
                   >
-                    <span className="bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-400 font-mono font-bold text-xs px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 mt-0.5">
+                    <span className="bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-400 font-mono font-bold text-xs px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 mt-0.5 shrink-0">
                       #{stop.code}
                     </span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <span className="font-bold text-slate-900 dark:text-white text-sm block truncate">
                         {stop.name}
                       </span>
@@ -129,7 +129,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                         {stop.routes.slice(0, 6).map(r => (
                           <span
                             key={r}
-                            className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                           >
                             {r}
                           </span>
@@ -138,11 +138,11 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                     </div>
                   </button>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={() => onSelectStop(stop)}
-                      className="p-2 rounded-xl text-teal-600 dark:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="p-2 rounded-xl text-teal-600 dark:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
                       aria-label="Ver tiempos"
                     >
                       <ArrowRight className="w-4 h-4" />
@@ -150,7 +150,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onToggleFavoriteStop(stopCode)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
                       aria-label={`Eliminar parada ${stop.code} de favoritos`}
                     >
                       <Trash2 className="w-4 h-4" />

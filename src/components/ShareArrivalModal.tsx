@@ -59,7 +59,7 @@ export const ShareArrivalModal: React.FC<ShareArrivalModalProps> = ({
       aria-labelledby="share-modal-title"
       className="fixed inset-0 z-50 m-0 p-0 w-full h-full max-w-none max-h-none bg-black/60 dark:bg-black/75 backdrop-blur-sm flex items-center justify-center border-none text-slate-800 dark:text-slate-100"
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl relative transition-colors">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md mx-3.5 sm:mx-auto p-5 sm:p-6 shadow-2xl relative transition-colors max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">

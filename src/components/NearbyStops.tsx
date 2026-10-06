@@ -108,12 +108,12 @@ export const NearbyStops: React.FC<NearbyStopsProps> = ({
                 </h4>
               </div>
 
-              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <div className="flex flex-wrap gap-1">
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                <div className="flex flex-wrap gap-1 min-w-0">
                   {stop.routes.slice(0, 5).map(r => (
                     <span
                       key={r}
-                      className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                      className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                     >
                       {r}
                     </span>
@@ -125,7 +125,7 @@ export const NearbyStops: React.FC<NearbyStopsProps> = ({
                   )}
                 </div>
 
-                <span className="text-xs font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                <span className="text-xs font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform shrink-0">
                   Ver tiempos
                   <ArrowRight className="w-3 h-3" />
                 </span>

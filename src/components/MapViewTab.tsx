@@ -31,21 +31,21 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
   onClearRouteFilter,
 }) => {
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col space-y-3 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <Map className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Mapa en Tiempo Real</h2>
-          <span className="text-xs text-slate-500 dark:text-slate-400">• {vehicles.length} buses en ruta</span>
+    <div className="h-[calc(100dvh-185px)] min-h-[420px] flex flex-col space-y-3 animate-in fade-in duration-300">
+      <div className="flex items-center justify-between px-1 gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Map className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">Mapa en Vivo</h2>
+          <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0 hidden xs:inline">• {vehicles.length} buses en ruta</span>
         </div>
 
         {selectedRoute && (
           <button
             type="button"
             onClick={onClearRouteFilter}
-            className="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl shadow-sm transition-colors cursor-pointer"
+            className="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm transition-colors cursor-pointer shrink-0 truncate max-w-[150px]"
           >
-            Quitar filtro de línea ({selectedRoute.shortName})
+            Quitar ({selectedRoute.shortName})
           </button>
         )}
       </div>

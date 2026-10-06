@@ -71,7 +71,7 @@ interface MobileNavProps {
 
 const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) => (
   <nav
-    className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800/80 px-1 py-1 flex justify-around items-center"
+    className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800/80 px-1 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom,0px))] flex justify-between items-center"
     aria-label="Navegación móvil"
   >
     {NAV_ITEMS.filter(item => item.showOnMobile).map(item => {
@@ -82,14 +82,16 @@ const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) => (
           key={item.id}
           type="button"
           onClick={() => onTabChange(item.id)}
-          className={`flex flex-col items-center gap-0.5 p-1.5 rounded-xl text-[11px] font-medium transition-colors ${
+          className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl text-[10px] sm:text-[11px] font-medium transition-colors ${
             isActive
               ? 'text-teal-600 dark:text-teal-400 font-bold'
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
-          <Icon className="w-4 h-4" />
-          <span>{item.mobileLabel}</span>
+          <Icon className="w-4 h-4 shrink-0" />
+          <span className="truncate max-w-[56px] text-center tracking-tight leading-none mt-0.5">
+            {item.mobileLabel}
+          </span>
         </button>
       );
     })}
@@ -106,24 +108,24 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 gap-2">
           {/* Logo and Brand */}
           <button
             type="button"
             onClick={() => onTabChange('search')}
-            className="flex items-center gap-3 text-left focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-lg p-1 -ml-1 transition-transform active:scale-95"
+            className="flex items-center gap-2.5 sm:gap-3 text-left focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-lg p-1 -ml-1 transition-transform active:scale-95 shrink-0"
             aria-label="Ir a inicio de VallaBus"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20">
-              <Bus className="w-6 h-6 text-white" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20 shrink-0">
+              <Bus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white">
                   Valla<span className="text-teal-600 dark:text-teal-400">Bus</span>
                 </span>
-                <span className="bg-teal-50 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-500/30 uppercase tracking-wider">
+                <span className="bg-teal-50 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-500/30 uppercase tracking-wider hidden xs:inline-flex sm:inline-flex">
                   AUVASA RT
                 </span>
               </div>
@@ -141,11 +143,11 @@ export const Header: React.FC<HeaderProps> = ({
           />
 
           {/* Right Controls: Theme Toggle & Live Indicator Pill */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={onToggleTheme}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-750 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-slate-700/80 transition-colors cursor-pointer shadow-sm flex items-center justify-center"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-750 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-slate-700/80 transition-colors cursor-pointer shadow-sm flex items-center justify-center shrink-0"
               aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
               title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
             >
@@ -156,15 +158,15 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 dark:text-slate-300 shadow-inner">
-              <span className="relative flex h-2.5 w-2.5">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 dark:text-slate-300 shadow-inner shrink-0">
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
               </span>
-              <span>
+              <span className="text-xs">
                 <strong className="text-emerald-600 dark:text-emerald-400">{vehiclesCount}</strong>{' '}
                 <span className="hidden sm:inline">buses en tiempo real</span>
-                <span className="sm:hidden">en ruta</span>
+                <span className="sm:hidden font-medium">en ruta</span>
               </span>
             </div>
           </div>

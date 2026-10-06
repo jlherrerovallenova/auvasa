@@ -120,7 +120,7 @@ export const App: React.FC = () => {
   }, [routes]);
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans pb-20 md:pb-8 selection:bg-teal-500 selection:text-white transition-colors">
+    <div className="min-h-[100dvh] bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-8 selection:bg-teal-500 selection:text-white transition-colors">
       {/* Top Navbar */}
       <Header
         activeTab={activeTab}
@@ -132,7 +132,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-6">
         {/* Geofencing Alarm Floating Banner & Alarm Dialog */}
         <DestinationAlarmBanner
           targetStop={alarmTargetStop}
