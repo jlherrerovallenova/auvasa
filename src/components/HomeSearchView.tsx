@@ -3,7 +3,7 @@ import { SearchBar } from './SearchBar.tsx';
 import { NearbyStops } from './NearbyStops.tsx';
 import { DailyRoutineCard } from './DailyRoutineCard.tsx';
 import type { BusStop, BusRoute } from '../types/bus.ts';
-import { Radio, Sparkles, Compass } from 'lucide-react';
+import { Radio, Compass } from 'lucide-react';
 
 interface HomeSearchViewProps {
   stops: BusStop[];
@@ -36,32 +36,18 @@ export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
 }) => {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Hero Banner */}
-      <div className="text-center max-w-2xl mx-auto pt-2 pb-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-300 text-xs font-semibold mb-3">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Tiempo Real Infalible • Valladolid AUVASA</span>
-        </div>
-        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-          Control Total de tu <span className="text-teal-600 dark:text-teal-400">Autobús</span>
-        </h1>
-        <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mt-2.5">
-          Localización GPS satelital en directo, horarios exactos y búsqueda ultrarrápida sin esperas ni errores.
-        </p>
-
-        {/* Universal Instant Search Bar */}
-        <div className="mt-6">
-          <SearchBar
-            stops={stops}
-            routes={routes}
-            onSelectStop={onSelectStop}
-            onSelectRoute={onSelectRouteFromSearch}
-          />
-        </div>
+      {/* Search & Quick Lines */}
+      <div className="max-w-2xl mx-auto pt-1">
+        <SearchBar
+          stops={stops}
+          routes={routes}
+          onSelectStop={onSelectStop}
+          onSelectRoute={onSelectRouteFromSearch}
+        />
 
         {/* Quick Popular Lines Pills */}
         {popularLines.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-3.5">
             <span className="text-xs text-slate-500 font-semibold mr-1">Líneas rápidas:</span>
             {popularLines.map(line => (
               <button
