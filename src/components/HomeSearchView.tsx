@@ -4,7 +4,7 @@ import { NearbyStops } from './NearbyStops.tsx';
 import { DailyRoutineCard } from './DailyRoutineCard.tsx';
 import type { BusStop, BusRoute } from '../types/bus.ts';
 import type { ActiveTab } from './Header.tsx';
-import { Radio, Compass, Route, Hash, AlertCircle } from 'lucide-react';
+import { Radio, Compass, Route, Hash, AlertCircle, Bus, Star } from 'lucide-react';
 
 interface HomeSearchViewProps {
   stops: BusStop[];
@@ -66,9 +66,33 @@ export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
           </div>
         )}
 
-        {/* Quick Tools Shortcut Row */}
+        {/* Quick Tools & Options Shortcut Grid */}
         {onNavigateTab && (
-          <div className="grid grid-cols-3 gap-2 mt-4">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-4">
+            <button
+              type="button"
+              onClick={() => onNavigateTab('lines')}
+              className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-teal-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors cursor-pointer group text-center"
+            >
+              <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                <Bus className="w-4 h-4" />
+              </div>
+              <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Líneas</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden xs:inline">54 rutas</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigateTab('map')}
+              className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-sky-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors cursor-pointer group text-center"
+            >
+              <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                <Compass className="w-4 h-4" />
+              </div>
+              <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Mapa</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden xs:inline">En directo</span>
+            </button>
+
             <button
               type="button"
               onClick={() => onNavigateTab('routes')}
@@ -91,6 +115,18 @@ export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
               </div>
               <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Marquesina</span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden xs:inline">Poste rápido</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigateTab('favorites')}
+              className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors cursor-pointer group text-center"
+            >
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+                <Star className="w-4 h-4" />
+              </div>
+              <span className="font-bold text-xs text-slate-800 dark:text-slate-100">Favoritos</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden xs:inline">Guardados</span>
             </button>
 
             <button

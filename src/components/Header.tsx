@@ -43,7 +43,10 @@ interface DesktopNavProps {
 }
 
 const DesktopNav: React.FC<DesktopNavProps> = ({ activeTab, alertsCount, onTabChange }) => (
-  <nav className="hidden md:flex items-center gap-1 xl:gap-1.5" aria-label="Navegación principal">
+  <nav
+    className="hidden md:flex items-center gap-0.5 lg:gap-1 bg-slate-100/90 dark:bg-slate-800/90 p-1 rounded-2xl border border-slate-200/80 dark:border-slate-750 shadow-inner shrink-0"
+    aria-label="Menú principal de opciones"
+  >
     {DESKTOP_NAV_ITEMS.map(item => {
       const Icon = item.icon;
       const isActive = activeTab === item.id;
@@ -52,16 +55,17 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ activeTab, alertsCount, onTabCh
           key={item.id}
           type="button"
           onClick={() => onTabChange(item.id)}
-          className={`flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer relative shrink-0 ${
+          className={`flex items-center gap-1 lg:gap-1.5 px-1.5 md:max-xl:px-2 xl:px-3 py-1.5 rounded-xl text-xs md:max-lg:text-[11px] font-bold transition-all cursor-pointer relative shrink-0 ${
             isActive
-              ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80'
+              ? 'bg-teal-600 text-white shadow-sm shadow-teal-600/30'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/80'
           }`}
+          title={item.label}
         >
           <Icon className="w-3.5 h-3.5 shrink-0" />
           <span>{item.label}</span>
           {item.id === 'alerts' && alertsCount > 0 && (
-            <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-1.5" />
+            <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-1.5 animate-pulse" />
           )}
         </button>
       );
@@ -145,93 +149,96 @@ export const Header: React.FC<HeaderProps> = ({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-2">
-          {/* Logo and Brand */}
-          <button
-            type="button"
-            onClick={() => onTabChange('search')}
-            className="flex items-center gap-2.5 sm:gap-3 text-left focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-lg p-1 -ml-1 transition-transform active:scale-95 shrink-0"
-            aria-label="Ir a inicio de VallaBus"
-          >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20 shrink-0">
-              <Bus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white">
-                  Valla<span className="text-teal-600 dark:text-teal-400">Bus</span>
+    <>
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex items-center justify-between h-16 gap-1 sm:gap-2">
+            {/* Logo and Brand */}
+            <button
+              type="button"
+              onClick={() => onTabChange('search')}
+              className="flex items-center gap-2 sm:gap-2.5 text-left focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-lg p-1 -ml-1 transition-transform active:scale-95 shrink-0"
+              aria-label="Ir a inicio de VallaBus"
+            >
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20 shrink-0">
+                <Bus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white">
+                    Valla<span className="text-teal-600 dark:text-teal-400">Bus</span>
+                  </span>
+                  <span className="bg-teal-50 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-500/30 uppercase tracking-wider hidden lg:inline-flex">
+                    AUVASA RT
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden 2xl:block truncate">
+                  Red de Autobuses de Valladolid
+                </p>
+              </div>
+            </button>
+
+            {/* Desktop Navigation Menu (Opciones) */}
+            <DesktopNav
+              activeTab={activeTab}
+              alertsCount={alertsCount}
+              onTabChange={onTabChange}
+            />
+
+            {/* Right Controls: Theme Toggle & Live Indicator Pill */}
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {/* Quick Alerts Button (shown on mobile, hidden on desktop where Avisos is already in DesktopNav) */}
+              <button
+                type="button"
+                onClick={() => onTabChange('alerts')}
+                className={`p-2 rounded-xl transition-colors cursor-pointer shadow-sm md:hidden flex items-center justify-center shrink-0 relative ${
+                  activeTab === 'alerts'
+                    ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/80'
+                }`}
+                aria-label="Ver avisos e incidencias"
+                title="Avisos e incidencias de tráfico"
+              >
+                <AlertCircle className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                {alertsCount > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-1.5 animate-pulse" />
+                )}
+              </button>
+
+              {/* Theme Toggle */}
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-750 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-slate-700/80 transition-colors cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <Moon className="w-4 h-4 text-slate-700" />
+                )}
+              </button>
+
+              {/* Realtime Buses Pill */}
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 px-2 sm:px-2.5 xl:px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 dark:text-slate-300 shadow-inner shrink-0">
+                <span className="relative flex h-2 w-2 xl:h-2.5 xl:w-2.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 xl:h-2.5 xl:w-2.5 bg-emerald-500" />
                 </span>
-                <span className="bg-teal-50 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-500/30 uppercase tracking-wider hidden xs:inline-flex sm:inline-flex">
-                  AUVASA RT
+                <span className="text-xs font-semibold">
+                  <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{vehiclesCount}</strong>{' '}
+                  <span className="hidden xl:inline font-normal">buses en tiempo real</span>
+                  <span className="hidden lg:inline xl:hidden font-normal">buses</span>
+                  <span className="md:max-lg:hidden sm:inline lg:hidden font-normal">en ruta</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 hidden xl:block">
-                Red de Autobuses de Valladolid
-              </p>
-            </div>
-          </button>
-
-          {/* Desktop Navigation */}
-          <DesktopNav
-            activeTab={activeTab}
-            alertsCount={alertsCount}
-            onTabChange={onTabChange}
-          />
-
-          {/* Right Controls: Alerts Button, Theme Toggle & Live Indicator Pill */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Quick Alerts Button */}
-            <button
-              type="button"
-              onClick={() => onTabChange('alerts')}
-              className={`p-2 rounded-xl transition-colors cursor-pointer shadow-sm flex items-center justify-center shrink-0 relative ${
-                activeTab === 'alerts'
-                  ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/80'
-              }`}
-              aria-label="Ver avisos e incidencias"
-              title="Avisos e incidencias de tráfico"
-            >
-              <AlertCircle className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-              {alertsCount > 0 && (
-                <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-1.5 animate-pulse" />
-              )}
-            </button>
-
-            {/* Theme Toggle */}
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-750 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-slate-700/80 transition-colors cursor-pointer shadow-sm flex items-center justify-center shrink-0"
-              aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-              title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 text-slate-700" />
-              )}
-            </button>
-
-            {/* Realtime Buses Pill */}
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 dark:text-slate-300 shadow-inner shrink-0">
-              <span className="relative flex h-2.5 w-2.5 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-              </span>
-              <span className="text-xs">
-                <strong className="text-emerald-600 dark:text-emerald-400">{vehiclesCount}</strong>{' '}
-                <span className="hidden sm:inline">buses en tiempo real</span>
-                <span className="sm:hidden font-medium">en ruta</span>
-              </span>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Bottom Navigation (5 Clean Tabs) */}
+      {/* Mobile Bottom Navigation (5 Clean Tabs) - Sibling to avoid backdrop-blur fixed bug */}
       <MobileNav
         activeTab={activeTab}
         alertsCount={alertsCount}
@@ -239,7 +246,7 @@ export const Header: React.FC<HeaderProps> = ({
         onOpenMore={() => setIsMoreOpen(true)}
       />
 
-      {/* iOS Style "Más" Bottom Sheet Modal */}
+      {/* iOS Style "Más Opciones" Bottom Sheet Modal - Sibling to avoid backdrop-blur fixed bug */}
       {isMoreOpen && (
         <dialog
           open
@@ -363,6 +370,6 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </dialog>
       )}
-    </header>
+    </>
   );
 };
