@@ -1,7 +1,8 @@
 import React from 'react';
 import { Map } from 'lucide-react';
 import { LiveMap } from './LiveMap.tsx';
-import type { BusStop, BusRoute, LiveVehicle } from '../types/bus.ts';
+import { MapStopArrivalsCard } from './map/MapStopArrivalsCard.tsx';
+import type { BusStop, BusRoute, LiveVehicle, StopArrival } from '../types/bus.ts';
 
 interface MapViewTabProps {
   stops: BusStop[];
@@ -13,6 +14,11 @@ interface MapViewTabProps {
   userLon: number | null;
   theme?: 'light' | 'dark';
   onSelectStop: (stop: BusStop) => void;
+  onCloseStop: () => void;
+  isFavoriteStop?: (stopCode: string) => boolean;
+  onToggleFavoriteStop?: (stopCode: string) => void;
+  onSetAlarm?: (stop: BusStop) => void;
+  onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onRequestLocation: () => void;
   onClearRouteFilter: () => void;
 }
@@ -27,6 +33,11 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
   userLon,
   theme,
   onSelectStop,
+  onCloseStop,
+  isFavoriteStop,
+  onToggleFavoriteStop,
+  onSetAlarm,
+  onShareArrival,
   onRequestLocation,
   onClearRouteFilter,
 }) => {
@@ -50,18 +61,32 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
         )}
       </div>
 
-      <LiveMap
-        stops={stops}
-        routes={routes}
-        vehicles={vehicles}
-        selectedStop={selectedStop}
-        selectedRoute={selectedRoute}
-        userLat={userLat}
-        userLon={userLon}
-        theme={theme}
-        onSelectStop={onSelectStop}
-        onRequestLocation={onRequestLocation}
-      />
+      <div className="relative flex-1 min-h-0 rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800">
+        <LiveMap
+          stops={stops}
+          routes={routes}
+          vehicles={vehicles}
+          selectedStop={selectedStop}
+          selectedRoute={selectedRoute}
+          userLat={userLat}
+          userLon={userLon}
+          theme={theme}
+          onSelectStop={onSelectStop}
+          onRequestLocation={onRequestLocation}
+        />
+
+        {/* Floating In-Map Stop Arrivals Card */}
+        {selectedStop && (
+          <MapStopArrivalsCard
+            stop={selectedStop}
+            onClose={onCloseStop}
+            isFavorite={isFavoriteStop ? isFavoriteStop(selectedStop.code) : false}
+            onToggleFavorite={onToggleFavoriteStop || (() => {})}
+            onSetAlarm={onSetAlarm}
+            onShareArrival={onShareArrival}
+          />
+        )}
+      </div>
     </div>
   );
 };

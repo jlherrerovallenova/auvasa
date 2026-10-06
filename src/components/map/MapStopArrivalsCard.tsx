@@ -1,0 +1,238 @@
+import React from 'react';
+import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle } from 'lucide-react';
+import type { BusStop, StopArrival } from '../../types/bus.ts';
+import { useStopArrivals } from '../../hooks/useStopArrivals.ts';
+
+interface MapStopArrivalsCardProps {
+  stop: BusStop;
+  onClose: () => void;
+  isFavorite: boolean;
+  onToggleFavorite: (stopCode: string) => void;
+  onSetAlarm?: (stop: BusStop) => void;
+  onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
+}
+
+export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
+  stop,
+  onClose,
+  isFavorite,
+  onToggleFavorite,
+  onSetAlarm,
+  onShareArrival,
+}) => {
+  const { data, loading, error, refresh } = useStopArrivals(stop.code);
+
+  return (
+    <div className="absolute bottom-3 left-2 right-2 sm:left-4 sm:right-auto sm:bottom-4 sm:w-[420px] max-w-[calc(100%-1rem)] sm:max-w-md z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[55dvh] sm:max-h-[480px] overflow-hidden animate-in slide-in-from-bottom duration-200 text-slate-800 dark:text-slate-100 transition-colors">
+      {/* Card Header */}
+      <div className="p-3.5 sm:p-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-850/80 shrink-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+            <span className="bg-teal-600 text-white font-mono font-black text-xs sm:text-sm px-2.5 py-1 rounded-xl shadow-sm shrink-0">
+              #{stop.code}
+            </span>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white leading-tight truncate">
+                {stop.name}
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                Parada AUVASA • {stop.routes.length} {stop.routes.length === 1 ? 'línea' : 'líneas'}
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Refresh */}
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={loading}
+              className="p-1.5 sm:p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Actualizar tiempos en directo"
+              aria-label="Actualizar tiempos en directo"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-600' : ''}`} />
+            </button>
+
+            {/* Favorite */}
+            <button
+              type="button"
+              onClick={() => onToggleFavorite(stop.code)}
+              className={`p-1.5 sm:p-2 rounded-xl transition-colors cursor-pointer ${
+                isFavorite
+                  ? 'text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 bg-amber-500/10'
+                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+              }`}
+              title={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+              aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+            >
+              <Star className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+            </button>
+
+            {/* Alarm */}
+            {onSetAlarm && (
+              <button
+                type="button"
+                onClick={() => onSetAlarm(stop)}
+                className="p-1.5 sm:p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Avisarme al llegar por GPS"
+                aria-label="Avisarme al llegar"
+              >
+                <Bell className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Close */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer ml-1"
+              title="Cerrar panel de parada"
+              aria-label="Cerrar panel de parada"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Passing Lines Badges */}
+        {stop.routes.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold self-center mr-0.5">
+              Líneas:
+            </span>
+            {stop.routes.map(r => (
+              <span
+                key={r}
+                className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-slate-200 dark:border-slate-700 shadow-2xs"
+              >
+                {r}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Card Body: Arrivals List */}
+      <div className="p-3 sm:p-3.5 overflow-y-auto flex-1 space-y-2">
+        {loading && !data && (
+          <div className="py-8 text-center text-slate-500 dark:text-slate-400 space-y-2">
+            <RefreshCw className="w-6 h-6 mx-auto animate-spin text-teal-600 dark:text-teal-400" />
+            <p className="text-xs font-medium">Buscando autobuses en tiempo real...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-300 text-xs flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold">No se pudieron cargar llegadas</p>
+              <p className="text-[11px] text-red-500 dark:text-red-400 mt-0.5">{error}</p>
+            </div>
+            <button
+              type="button"
+              onClick={refresh}
+              className="px-2 py-1 text-[10px] font-bold bg-red-500 text-white rounded-lg cursor-pointer"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+
+        {data && data.arrivals.length === 0 && !loading && (
+          <div className="py-6 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3">
+            <Clock className="w-8 h-8 mx-auto mb-1.5 text-slate-400 dark:text-slate-500 opacity-60" />
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Sin autobuses en los próximos minutos
+            </p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 max-w-xs mx-auto">
+              No hay servicios activos o en camino para las líneas de esta parada en este momento.
+            </p>
+          </div>
+        )}
+
+        {data && data.arrivals.length > 0 && (
+          <div className="space-y-1.5">
+            {data.arrivals.map(arr => {
+              const isArriving = arr.minutesRemaining <= 0;
+              const uniqueKey = `${arr.routeShortName}_${arr.timestamp}_${arr.exactTime}_${arr.isRealtime ? 'rt' : 'sc'}`;
+
+              return (
+                <div
+                  key={uniqueKey}
+                  className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-750 transition-colors flex items-center justify-between gap-2 shadow-2xs"
+                >
+                  {/* Left: Line badge & Destination */}
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span
+                      className="w-9 h-7 rounded-lg font-black text-xs flex items-center justify-center shadow-xs shrink-0 tracking-tight"
+                      style={{ backgroundColor: arr.routeColor || '#008075', color: arr.routeTextColor || '#FFFFFF' }}
+                    >
+                      {arr.routeShortName}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
+                        {arr.destination || `Línea ${arr.routeShortName}`}
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+                        {arr.isRealtime ? (
+                          <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold truncate">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                            <span>GPS en directo</span>
+                            {arr.licensePlate && (
+                              <span className="text-slate-400 dark:text-slate-500 font-mono text-[9px] shrink-0">
+                                ({arr.licensePlate})
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-amber-600 dark:text-amber-400/90 flex items-center gap-1 font-medium truncate">
+                            <Clock className="w-2.5 h-2.5 shrink-0" />
+                            <span>Horario ({arr.exactTime})</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Arrival Time Badge & Share Button */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {onShareArrival && (
+                      <button
+                        type="button"
+                        onClick={() => onShareArrival(stop, arr)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-750 transition-colors cursor-pointer shrink-0"
+                        title="Compartir hora de llegada"
+                        aria-label="Compartir hora de llegada"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    <div className="text-right shrink-0">
+                      <div
+                        className={`inline-flex items-center px-2 py-1 rounded-xl font-black text-xs shadow-2xs ${
+                          isArriving
+                            ? 'bg-emerald-500 text-slate-950 animate-pulse font-extrabold'
+                            : arr.isRealtime
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                            : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                        }`}
+                      >
+                        {isArriving ? 'Llegando' : `${arr.minutesRemaining} min`}
+                      </div>
+                      <div className="text-[9px] text-slate-400 font-mono mt-0.5">
+                        {arr.exactTime}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

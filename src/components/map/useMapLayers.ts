@@ -239,54 +239,46 @@ export function useMapLayers({
       stopsToRender = stops.filter(s => routeStopCodes.has(s.code));
     }
 
-    const stopByLatLng = new Map<string, BusStop>();
-
     for (const stop of stopsToRender) {
       const isSelected = selectedStop?.code === stop.code;
-      const key = `${stop.lat}_${stop.lon}`;
-      stopByLatLng.set(key, stop);
 
       const stopIcon = L.divIcon({
         className: 'bus-stop-pin',
         html: `
           <div style="
-            width: ${isSelected ? '14px' : '9px'};
-            height: ${isSelected ? '14px' : '9px'};
-            background: ${isSelected ? '#14b8a6' : '#475569'};
+            width: ${isSelected ? '16px' : '10px'};
+            height: ${isSelected ? '16px' : '10px'};
+            background: ${isSelected ? '#0d9488' : '#475569'};
             border: 2px solid ${isSelected ? '#ffffff' : '#0f172a'};
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: ${isSelected ? '0 0 10px #14b8a6' : 'none'};
+            box-shadow: ${isSelected ? '0 0 14px rgba(13, 148, 136, 0.9)' : 'none'};
             transition: transform 0.2s;
           "></div>
         `,
-        iconSize: [isSelected ? 14 : 9, isSelected ? 14 : 9],
-        iconAnchor: [isSelected ? 7 : 4.5, isSelected ? 7 : 4.5],
+        iconSize: [isSelected ? 16 : 10, isSelected ? 16 : 10],
+        iconAnchor: [isSelected ? 8 : 5, isSelected ? 8 : 5],
       });
 
       const marker = L.marker([stop.lat, stop.lon], { icon: stopIcon });
 
       marker.bindTooltip(
-        `<strong>#${stop.code}</strong> ${stop.name}`,
+        `<div style="font-size: 11px; font-weight: 600; line-height: 1.3;">
+          <div><strong style="color: #0d9488;">#${stop.code}</strong> ${stop.name}</div>
+          <div style="font-size: 10px; color: #64748b; font-weight: 500; margin-top: 1px;">Pulsa para ver autobuses y tiempos</div>
+        </div>`,
         { direction: 'top', offset: [0, -6] }
       );
+
+      marker.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        onSelectStopRef.current(stop);
+      });
 
       stopsLayer.addLayer(marker);
     }
 
-    const handleLayerClick = (e: L.LeafletEvent) => {
-      const latlng = (e as L.LeafletMouseEvent).latlng;
-      if (!latlng) return;
-      const matched = stopByLatLng.get(`${latlng.lat}_${latlng.lng}`);
-      if (matched) {
-        onSelectStopRef.current(matched);
-      }
-    };
-
-    stopsLayer.addEventListener('click', handleLayerClick);
-
     return () => {
-      stopsLayer.removeEventListener('click', handleLayerClick);
       stopsLayer.clearLayers();
     };
   }, [stopsLayer, stops, selectedRoute, selectedStop, showStops]);

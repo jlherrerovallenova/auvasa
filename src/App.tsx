@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Header, type ActiveTab } from './components/Header.tsx';
 import { HomeSearchView } from './components/HomeSearchView.tsx';
 import { RoutePlanner } from './components/RoutePlanner.tsx';
@@ -23,7 +23,18 @@ import type { BusStop, BusRoute, StopArrival } from './types/bus.ts';
 
 export const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState<ActiveTab>('search');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('tab') as ActiveTab;
+      if (t && ['search', 'routes', 'lines', 'map', 'marquesina', 'favorites', 'alerts'].includes(t)) {
+        return t;
+      }
+    } catch {
+      // ignore
+    }
+    return 'search';
+  });
   const [selectedStop, setSelectedStop] = useState<BusStop | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<BusRoute | null>(null);
 
@@ -85,6 +96,22 @@ export const App: React.FC = () => {
       setSelectedStop(s);
     }
   }, [sharedArrivalBanner, stopMapByCode]);
+
+  // Support ?stop=CODE URL parameter (e.g. ?tab=map&stop=1002)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const stopCode = params.get('stop');
+      if (stopCode && stopMapByCode.size > 0 && !selectedStop) {
+        const s = stopMapByCode.get(stopCode);
+        if (s) {
+          setSelectedStop(s);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [stopMapByCode, selectedStop]);
 
   const nearbyStops = useMemo(() => {
     return getNearbyStops(stops, 1500, 6);
@@ -217,6 +244,11 @@ export const App: React.FC = () => {
             userLon={userLon}
             theme={theme}
             onSelectStop={handleSelectStop}
+            onCloseStop={handleCloseStopModal}
+            isFavoriteStop={isFavoriteStop}
+            onToggleFavoriteStop={toggleFavoriteStop}
+            onSetAlarm={setAlarmForStop}
+            onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
             onRequestLocation={requestLocation}
             onClearRouteFilter={() => setSelectedRoute(null)}
           />
@@ -263,9 +295,9 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Stop Arrivals Modal */}
+      {/* Stop Arrivals Modal (Shown when outside map tab; in map tab, the in-map card is used) */}
       <StopArrivalsModal
-        stop={selectedStop}
+        stop={activeTab !== 'map' ? selectedStop : null}
         onClose={handleCloseStopModal}
         isFavorite={selectedStop ? isFavoriteStop(selectedStop.code) : false}
         onToggleFavorite={toggleFavoriteStop}

@@ -313,7 +313,6 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
               type="button"
               onClick={() => {
                 onViewOnMap(stop);
-                onClose();
               }}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors shadow-md shadow-teal-700/30 cursor-pointer shrink-0"
             >
