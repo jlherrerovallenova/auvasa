@@ -112,16 +112,33 @@ export function createAlexaSkill({ getStopArrivals, getStopByCode, searchStopsBy
         return handlerInput.responseBuilder.speak(speech).getResponse();
       }
 
-      const topArrivals = arrivalsData.arrivals.slice(0, 3);
-      const parts = topArrivals.map((arr, i) => {
-        const timeText = arr.minutesRemaining <= 0 ? 'está llegando ahora mismo' : `llegará en ${arr.minutesRemaining} ${arr.minutesRemaining === 1 ? 'minuto' : 'minutos'}`;
-        const fleetText = arr.isRealtime && arr.vehicleId ? ` (es ${getBusVoiceDescription(arr.vehicleId)})` : '';
-        return `La línea ${arr.routeShortName} hacia ${arr.destination} ${timeText}${i === 0 ? fleetText : ''}`;
-      });
+      // Group arrivals by line to produce natural speech without repetition
+      const arrivalsByLine = new Map();
+      for (const arr of arrivalsData.arrivals) {
+        const key = `${arr.routeShortName}_${arr.destination}`;
+        if (!arrivalsByLine.has(key)) {
+          arrivalsByLine.set(key, []);
+        }
+        arrivalsByLine.get(key).push(arr);
+      }
 
-      const speech = `En la parada ${stopObj.code}, ${stopObj.name}: ${parts.join('. ')}.`;
+      const spokenParts = [];
+      for (const [key, list] of Array.from(arrivalsByLine.entries()).slice(0, 3)) {
+        const first = list[0];
+        const firstTime = first.minutesRemaining <= 0 ? 'está llegando ahora mismo' : `llegará en ${first.minutesRemaining} ${first.minutesRemaining === 1 ? 'minuto' : 'minutos'}`;
+        const fleetText = first.isRealtime && first.vehicleId ? ` (${getBusVoiceDescription(first.vehicleId)})` : '';
+        
+        let part = `La línea ${first.routeShortName} hacia ${first.destination} ${firstTime}${fleetText}`;
+        if (list.length > 1) {
+          const second = list[1];
+          part += `, y el siguiente en ${second.minutesRemaining} minutos`;
+        }
+        spokenParts.push(part);
+      }
+
+      const speech = `En la parada ${stopObj.code}, ${stopObj.name}: ${spokenParts.join('. ')}.`;
       const cardTitle = `Parada #${stopObj.code} - ${stopObj.name}`;
-      const cardContent = topArrivals.map(a => `• L${a.routeShortName} -> ${a.destination}: ${a.minutesRemaining} min (${a.exactTime})`).join('\n');
+      const cardContent = arrivalsData.arrivals.slice(0, 5).map(a => `• L${a.routeShortName} -> ${a.destination}: ${a.minutesRemaining} min (${a.exactTime})`).join('\n');
 
       return handlerInput.responseBuilder
         .speak(speech)
@@ -162,8 +179,15 @@ export function createAlexaSkill({ getStopArrivals, getStopByCode, searchStopsBy
       }
 
       if (!targetStopCode || !stopObj) {
-        const speech = `Por favor, dime el número de parada para consultar la línea ${lineName || 'que buscas'}. Por ejemplo: parada 58.`;
+        const speech = `Por favor, dime el número de parada para consultar la línea ${lineName || 'que buscas'}. Por ejemplo: parada 550.`;
         return handlerInput.responseBuilder.speak(speech).reprompt('¿En qué parada quieres consultar?').getResponse();
+      }
+
+      // Check if line passes through this stop
+      if (stopObj.routes && stopObj.routes.length > 0 && !stopObj.routes.some(r => r.toUpperCase() === lineName.toUpperCase())) {
+        const availableLines = stopObj.routes.join(', ');
+        const speech = `La línea ${lineName} no tiene parada en la ${stopObj.code} (${stopObj.name}). Las líneas que pasan por esta parada son: línea ${availableLines}.`;
+        return handlerInput.responseBuilder.speak(speech).getResponse();
       }
 
       const arrivalsData = await getStopArrivals(targetStopCode);
