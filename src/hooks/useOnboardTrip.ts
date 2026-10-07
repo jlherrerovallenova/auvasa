@@ -230,7 +230,6 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
       const originCode = 'code' in originStop ? originStop.code : originStop.stopCode;
 
       // Determine direction
-      const originCode = 'code' in originStop ? originStop.code : originStop.stopCode;
       const dirKey =
         directionKey ||
         Object.keys(route.directions || {}).find(k => {
