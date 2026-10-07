@@ -82,12 +82,12 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     const tileGroup = baseTilesRef.current;
     if (!tileGroup) return;
 
-    const cartoKey = import.meta.env.VITE_CARTO_API_KEY || 'cb1_4db1_1_fc01044be2119eaf93eabc9d';
+    const cartoKey = import.meta.env.VITE_CARTO_API_KEY || 'cb1_4dbl_1_fc01044be2119eaf93eabc9d';
 
     if (mapTheme === 'dark') {
       if (cartoKey) {
         const darkMatter = L.tileLayer(
-          `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`,
+          `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${cartoKey}`,
           {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
             subdomains: 'abcd',
@@ -115,7 +115,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     } else {
       if (cartoKey) {
         const positron = L.tileLayer(
-          `https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`,
+          `https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png?key=${cartoKey}`,
           {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
             subdomains: 'abcd',
