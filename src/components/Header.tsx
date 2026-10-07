@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bus, Star, AlertCircle, Compass, Search, Route, Hash, Sun, Moon, MoreHorizontal, X, ChevronRight } from 'lucide-react';
+import { Bus, Star, AlertCircle, Compass, Route, Hash, Sun, Moon, MoreHorizontal, X, ChevronRight } from 'lucide-react';
 import type { Theme } from '../hooks/useTheme.ts';
 import type { OnboardTrip } from '../types/onboard.ts';
 
@@ -23,7 +23,6 @@ interface NavItemDef {
 }
 
 const DESKTOP_NAV_ITEMS: NavItemDef[] = [
-  { id: 'search', label: 'Buscar', icon: Search },
   { id: 'routes', label: 'Rutas', icon: Route },
   { id: 'lines', label: 'Líneas', icon: Bus },
   { id: 'map', label: 'Mapa', icon: Compass },
@@ -33,8 +32,8 @@ const DESKTOP_NAV_ITEMS: NavItemDef[] = [
 ];
 
 const MAIN_MOBILE_TABS = [
-  { id: 'search' as const, label: 'Buscar', icon: Search },
   { id: 'lines' as const, label: 'Líneas', icon: Bus },
+  { id: 'routes' as const, label: 'Rutas', icon: Route },
   { id: 'map' as const, label: 'Mapa', icon: Compass },
   { id: 'favorites' as const, label: 'Favoritos', icon: Star },
 ];
@@ -47,7 +46,7 @@ interface DesktopNavProps {
 
 const DesktopNav: React.FC<DesktopNavProps> = ({ activeTab, alertsCount, onTabChange }) => (
   <nav
-    className="hidden md:flex items-center gap-0.5 lg:gap-1 bg-slate-100/90 dark:bg-slate-800/90 p-1 rounded-2xl border border-slate-200/80 dark:border-slate-750 shadow-inner shrink-0"
+    className="hidden md:flex items-center gap-0.5 lg:gap-1 bg-slate-100/90 dark:bg-slate-800/90 p-1 rounded-2xl border border-slate-200/80 dark:border-slate-755 shadow-inner shrink-0"
     aria-label="Menú principal de opciones"
   >
     {DESKTOP_NAV_ITEMS.map(item => {
@@ -58,7 +57,7 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ activeTab, alertsCount, onTabCh
           key={item.id}
           type="button"
           onClick={() => onTabChange(item.id)}
-          className={`flex items-center gap-1 lg:gap-1.5 px-1.5 md:max-xl:px-2 xl:px-3 py-1.5 rounded-xl text-xs md:max-lg:text-[11px] font-bold transition-all cursor-pointer relative shrink-0 ${
+          className={`flex items-center gap-1 lg:gap-1.5 px-1.5 md:max-xl:px-2 xl:px-3 py-1.5 rounded-xl text-xs md:max-lg:text-[11px] font-bold transition-colors cursor-pointer relative shrink-0 ${
             isActive
               ? 'bg-teal-600 text-white shadow-sm shadow-teal-600/30'
               : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/80'
@@ -84,11 +83,11 @@ interface MobileNavProps {
 }
 
 const MobileNav: React.FC<MobileNavProps> = ({ activeTab, alertsCount, onTabChange, onOpenMore }) => {
-  const isSubTabActive = activeTab === 'routes' || activeTab === 'marquesina' || activeTab === 'alerts';
+  const isSubTabActive = activeTab === 'marquesina' || activeTab === 'alerts';
 
   // Dynamic label & icon for 5th tab
-  const FifthIcon = activeTab === 'routes' ? Route : activeTab === 'marquesina' ? Hash : activeTab === 'alerts' ? AlertCircle : MoreHorizontal;
-  const fifthLabel = activeTab === 'routes' ? 'Rutas' : activeTab === 'marquesina' ? 'Marques.' : activeTab === 'alerts' ? 'Avisos' : 'Más';
+  const FifthIcon = activeTab === 'marquesina' ? Hash : activeTab === 'alerts' ? AlertCircle : MoreHorizontal;
+  const fifthLabel = activeTab === 'marquesina' ? 'Marques.' : activeTab === 'alerts' ? 'Avisos' : 'Más';
 
   return (
     <nav
