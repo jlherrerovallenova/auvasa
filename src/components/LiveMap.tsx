@@ -82,28 +82,64 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     const tileGroup = baseTilesRef.current;
     if (!tileGroup) return;
 
-    tileGroup.clearLayers();
+    const cartoKey = import.meta.env.VITE_CARTO_API_KEY;
 
     if (mapTheme === 'dark') {
-      const darkMatter = L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-          subdomains: 'abcd',
-          maxZoom: 20,
-        }
-      );
-      tileGroup.addLayer(darkMatter);
+      if (cartoKey) {
+        const darkMatter = L.tileLayer(
+          `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`,
+          {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20,
+          }
+        );
+        tileGroup.addLayer(darkMatter);
+      } else {
+        const baseDark = L.tileLayer(
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+          {
+            attribution: '&copy; Esri &copy; OpenStreetMap contributors',
+            maxZoom: 18,
+          }
+        );
+        const labelsDark = L.tileLayer(
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+          {
+            maxZoom: 18,
+          }
+        );
+        tileGroup.addLayer(baseDark);
+        tileGroup.addLayer(labelsDark);
+      }
     } else {
-      const positron = L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-          subdomains: 'abcd',
-          maxZoom: 20,
-        }
-      );
-      tileGroup.addLayer(positron);
+      if (cartoKey) {
+        const positron = L.tileLayer(
+          `https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`,
+          {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20,
+          }
+        );
+        tileGroup.addLayer(positron);
+      } else {
+        const baseLight = L.tileLayer(
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+          {
+            attribution: '&copy; Esri &copy; OpenStreetMap contributors',
+            maxZoom: 18,
+          }
+        );
+        const labelsLight = L.tileLayer(
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+          {
+            maxZoom: 18,
+          }
+        );
+        tileGroup.addLayer(baseLight);
+        tileGroup.addLayer(labelsLight);
+      }
     }
 
     return () => {
