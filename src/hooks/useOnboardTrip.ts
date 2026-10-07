@@ -226,6 +226,9 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
       // Warm up AudioContext from user click gesture
       getAudioContext();
 
+      // Determine origin code
+      const originCode = 'code' in originStop ? originStop.code : originStop.stopCode;
+
       // Determine direction
       const originCode = 'code' in originStop ? originStop.code : originStop.stopCode;
       const dirKey =

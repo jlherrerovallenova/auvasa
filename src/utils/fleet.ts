@@ -140,40 +140,79 @@ export interface OccupancyInfo {
   colorClass: string;
   bgClass: string;
   iconColor: string;
+  estimatedPax?: string;
 }
 
-export function parseOccupancy(occupancy?: string | number): OccupancyInfo {
-  const occStr = String(occupancy).toUpperCase();
+export function parseOccupancy(occupancy?: string | number, isArticulated = false): OccupancyInfo {
+  const occStr = String(occupancy ?? '').trim().toUpperCase();
 
-  if (occStr === 'MANY_SEATS_AVAILABLE' || occStr === '0') {
+  // 0 = EMPTY
+  if (occStr === 'EMPTY' || occStr === '0') {
+    return {
+      label: 'Casi vacío',
+      colorClass: 'text-emerald-400',
+      bgClass: 'bg-emerald-500/10 border-emerald-500/30',
+      iconColor: '#10b981',
+      estimatedPax: isArticulated ? '< 15 pers.' : '< 10 pers.',
+    };
+  }
+
+  // 1 = MANY_SEATS_AVAILABLE
+  if (occStr === 'MANY_SEATS_AVAILABLE' || occStr === '1') {
     return {
       label: 'Muchos asientos libres',
       colorClass: 'text-emerald-400',
       bgClass: 'bg-emerald-500/10 border-emerald-500/30',
       iconColor: '#10b981',
+      estimatedPax: isArticulated ? '15-40 pers.' : '10-25 pers.',
     };
   }
 
-  if (occStr === 'FEW_SEATS_AVAILABLE' || occStr === '1') {
+  // 2 = FEW_SEATS_AVAILABLE
+  if (occStr === 'FEW_SEATS_AVAILABLE' || occStr === '2') {
     return {
-      label: 'Plazas de pie disponibles',
+      label: 'Pocos asientos libres',
       colorClass: 'text-amber-400',
       bgClass: 'bg-amber-500/10 border-amber-500/30',
       iconColor: '#f59e0b',
+      estimatedPax: isArticulated ? '40-80 pers.' : '25-50 pers.',
     };
   }
 
-  if (occStr === 'STANDING_ROOM_ONLY' || occStr === 'FULL' || occStr === '2') {
+  // 3 = STANDING_ROOM_ONLY
+  if (occStr === 'STANDING_ROOM_ONLY' || occStr === '3') {
+    return {
+      label: 'Solo plazas de pie',
+      colorClass: 'text-orange-400',
+      bgClass: 'bg-orange-500/10 border-orange-500/30',
+      iconColor: '#f97316',
+      estimatedPax: isArticulated ? '80-120 pers.' : '50-75 pers.',
+    };
+  }
+
+  // 4 = CRUSHED_STANDING_ROOM_ONLY, 5 = FULL
+  if (occStr === 'CRUSHED_STANDING_ROOM_ONLY' || occStr === 'FULL' || occStr === '4' || occStr === '5') {
     return {
       label: 'Autobús lleno',
       colorClass: 'text-rose-400',
       bgClass: 'bg-rose-500/10 border-rose-500/30',
       iconColor: '#f43f5e',
+      estimatedPax: isArticulated ? '> 120 pers.' : '> 75 pers.',
+    };
+  }
+
+  // 6 = NOT_ACCEPTING_PASSENGERS
+  if (occStr === 'NOT_ACCEPTING_PASSENGERS' || occStr === '6') {
+    return {
+      label: 'No admite viajeros',
+      colorClass: 'text-rose-400',
+      bgClass: 'bg-rose-500/10 border-rose-500/30',
+      iconColor: '#ef4444',
     };
   }
 
   return {
-    label: 'Aforo disponible',
+    label: 'Aforo no disponible',
     colorClass: 'text-slate-400',
     bgClass: 'bg-slate-800/60 border-slate-700/60',
     iconColor: '#94a3b8',

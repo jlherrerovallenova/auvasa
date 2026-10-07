@@ -85,30 +85,25 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     tileGroup.clearLayers();
 
     if (mapTheme === 'dark') {
-      const baseDark = L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      const darkMatter = L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
         {
-          attribution: '&copy; Esri &copy; OpenStreetMap contributors',
-          maxZoom: 18,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: 'abcd',
+          maxZoom: 20,
         }
       );
-      const labelsDark = L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
-        {
-          maxZoom: 18,
-        }
-      );
-      tileGroup.addLayer(baseDark);
-      tileGroup.addLayer(labelsDark);
+      tileGroup.addLayer(darkMatter);
     } else {
-      const streets = L.tileLayer(
-        'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+      const positron = L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
         {
-          attribution: '&copy; OpenStreetMap contributors, OpenStreetMap France',
-          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: 'abcd',
+          maxZoom: 20,
         }
       );
-      tileGroup.addLayer(streets);
+      tileGroup.addLayer(positron);
     }
 
     return () => {

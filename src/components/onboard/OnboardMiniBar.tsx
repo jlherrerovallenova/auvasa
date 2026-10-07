@@ -1,3 +1,4 @@
+import React from 'react';
 import { ChevronUp, BellRing, Gauge, Flag } from 'lucide-react';
 import type { OnboardTrip, OnboardMetrics } from '../../types/onboard.ts';
 

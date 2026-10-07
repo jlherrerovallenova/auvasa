@@ -103,12 +103,13 @@ async function processGTFS() {
       if (!line.trim()) continue;
       const parts = line.split(',');
       const routeId = parts[0].trim();
+      const serviceId = parts[1].trim();
       const tripId = parts[2].trim();
       const headsign = parts[3]?.trim() || '';
       const directionId = parts[4]?.trim() || '0';
       const shapeId = parts[6]?.trim() || '';
 
-      tripMap[tripId] = { routeId, directionId, headsign, shapeId };
+      tripMap[tripId] = { routeId, serviceId, directionId, headsign, shapeId };
 
       const key = `${routeId}_${directionId}`;
       if (!routeDirTrips[key]) routeDirTrips[key] = [];
@@ -119,6 +120,43 @@ async function processGTFS() {
       }
     }
   }
+
+  // 3b. Process calendar_dates.txt
+  console.log('3b. Procesando calendar_dates.txt...');
+  const dateToServices = {};
+  const dowToServices = { 0: new Set(), 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set(), 6: new Set() };
+  if (fs.existsSync(path.join(RAW_DIR, 'calendar_dates.txt'))) {
+    const rlCal = readline.createInterface({
+      input: fs.createReadStream(path.join(RAW_DIR, 'calendar_dates.txt'), { encoding: 'utf-8' }),
+    });
+    let isHeaderCal = true;
+    for await (const line of rlCal) {
+      if (isHeaderCal) { isHeaderCal = false; continue; }
+      if (!line.trim()) continue;
+      const [sid, date, exc] = line.split(',').map(s => s.trim());
+      if (exc === '1') {
+        if (!dateToServices[date]) dateToServices[date] = [];
+        dateToServices[date].push(sid);
+
+        const y = +date.slice(0, 4);
+        const m = +date.slice(4, 6) - 1;
+        const d = +date.slice(6, 8);
+        const dow = new Date(Date.UTC(y, m, d, 12, 0, 0)).getUTCDay();
+        dowToServices[dow].add(sid);
+      }
+    }
+  }
+
+  const dowFallback = {};
+  for (const [k, v] of Object.entries(dowToServices)) {
+    dowFallback[k] = Array.from(v);
+  }
+
+  const calendarData = {
+    dates: dateToServices,
+    dow: dowFallback
+  };
+  fs.writeFileSync(path.join(DATA_DIR, 'calendar_services.json'), JSON.stringify(calendarData));
 
   // 4. Process stop_times.txt
   console.log('4. Procesando stop_times.txt...');
@@ -174,7 +212,8 @@ async function processGTFS() {
             c: routeObj.color,
             h: tripInfo.headsign,
             d: depTime,
-            t: tripId
+            t: tripId,
+            s: tripInfo.serviceId,
           });
         }
       }

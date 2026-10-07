@@ -35,6 +35,9 @@ const stopsData = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'stops.json'), 
 const shapesData = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'shapes.json'), 'utf-8'));
 const tripStopSeqMap = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'trip_stop_seq_map.json'), 'utf-8'));
 const scheduledArrivals = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'scheduled_arrivals.json'), 'utf-8'));
+const calendarServicesData = fs.existsSync(path.join(DATA_DIR, 'calendar_services.json'))
+  ? JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'calendar_services.json'), 'utf-8'))
+  : { dates: {}, dow: {} };
 
 // Indexes for ultra-fast lookups
 const routeById = new Map();
@@ -102,7 +105,7 @@ async function fetchRealtimeVehicles() {
         speed: Math.round((pos.speed || 0) * 3.6),
         bearing: pos.bearing || 0,
         timestamp: v.timestamp ? Number(v.timestamp) : Math.floor(Date.now() / 1000),
-        occupancy: v.occupancyStatus || 'UNKNOWN',
+        occupancy: v.occupancyStatus !== undefined && v.occupancyStatus !== null ? v.occupancyStatus : 'UNKNOWN',
       };
     }).filter(Boolean);
 
@@ -336,7 +339,7 @@ async function calculateStopArrivals(stopCode) {
             vehicleId: tu.vehicleId || vehicle?.vehicleId || null,
             licensePlate: tu.licensePlate || vehicle?.licensePlate || null,
             speed: vehicle?.speed || null,
-            occupancy: vehicle?.occupancy || 'UNKNOWN',
+            occupancy: vehicle?.occupancy ?? 'UNKNOWN',
           });
         }
       }
@@ -346,7 +349,23 @@ async function calculateStopArrivals(stopCode) {
   const scheduledList = scheduledArrivals[stopCode] || [];
   const scheduledArrivalsOutput = [];
 
+  const yyyy = nowMadrid.getFullYear();
+  const mm = String(nowMadrid.getMonth() + 1).padStart(2, '0');
+  const dd = String(nowMadrid.getDate()).padStart(2, '0');
+  const todayDateStr = `${yyyy}${mm}${dd}`;
+  const dow = nowMadrid.getDay();
+
+  const activeServicesList = (calendarServicesData.dates && calendarServicesData.dates[todayDateStr])
+    || (calendarServicesData.dow && calendarServicesData.dow[String(dow)])
+    || [];
+  const activeServicesSet = new Set(activeServicesList);
+
   for (const s of scheduledList) {
+    // Filter out trips that do not run today (e.g. weekend, holiday, or special football trips)
+    if (s.s && activeServicesSet.size > 0 && !activeServicesSet.has(s.s)) {
+      continue;
+    }
+
     if (s.d >= currentTimeStr) {
       const [h, m, sec] = s.d.split(':').map(Number);
       const schedDate = new Date();
@@ -355,8 +374,11 @@ async function calculateStopArrivals(stopCode) {
       const diffSec = schedTimestamp - nowSec;
 
       if (diffSec >= 0 && diffSec <= 5400) {
+        // If there is already a live GPS vehicle on this route approaching this stop
+        // within +/- 10 minutes (600s), that live bus is already covering this departure.
+        // Avoid showing a ghost theoretical arrival for a bus that is delayed in traffic.
         const hasRealtimeNearby = realTimeArrivals.some(
-          rta => rta.routeShortName === s.r && Math.abs(rta.timestamp - schedTimestamp) < 300
+          rta => rta.routeShortName === s.r && Math.abs(rta.timestamp - schedTimestamp) < 600
         );
 
         if (!hasRealtimeNearby) {

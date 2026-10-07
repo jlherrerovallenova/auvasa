@@ -26,7 +26,7 @@ interface ArrivalItemProps {
 const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, onStartOnboard }) => {
   const isArriving = arr.minutesRemaining <= 0;
   const fleet = getBusFleetInfo(arr.vehicleId);
-  const occupancy = parseOccupancy(arr.occupancy);
+  const occupancy = parseOccupancy(arr.occupancy, fleet.isArticulated);
 
   return (
     <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/70 transition-colors space-y-2.5 shadow-sm dark:shadow-md">
@@ -57,9 +57,12 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
                   )}
                 </span>
               ) : (
-                <span className="text-amber-600 dark:text-amber-400/90 flex items-center gap-1 font-medium truncate">
+                <span
+                  className="text-amber-600 dark:text-amber-400/90 flex items-center gap-1 font-medium truncate"
+                  title="Horario teórico oficial: el autobús aún no ha salido de cabecera o no emite señal GPS"
+                >
                   <Clock className="w-3 h-3 shrink-0" />
-                  <span>Programado ({arr.exactTime})</span>
+                  <span>Teórico cabecera ({arr.exactTime})</span>
                 </span>
               )}
             </div>
@@ -80,7 +83,7 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
             {isArriving ? 'Llegando' : `${arr.minutesRemaining} min`}
           </div>
           <div className="text-[10px] text-slate-500 mt-1 font-mono">
-            Hora: {arr.exactTime}
+            {arr.isRealtime ? `Hora: ${arr.exactTime}` : `Teórico: ${arr.exactTime}`}
           </div>
         </div>
       </div>
@@ -89,7 +92,12 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
       {arr.isRealtime && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-200/80 dark:border-slate-750/70 text-[10px]">
           <span className={`px-2 py-0.5 rounded-md font-medium border ${occupancy.bgClass} ${occupancy.colorClass}`}>
-            {occupancy.label}
+            <span>{occupancy.label}</span>
+            {occupancy.estimatedPax && (
+              <span className="opacity-80 text-[9px] font-mono ml-1">
+                ({occupancy.estimatedPax})
+              </span>
+            )}
           </span>
 
           <span className="px-2 py-0.5 rounded-md font-medium bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-750 flex items-center gap-1">
@@ -112,7 +120,7 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
           <button
             type="button"
             onClick={() => onStartOnboard(stop, arr)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-sm transition-all transform active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-sm transition-colors transform active:scale-95 cursor-pointer"
             title="Activar avisos y copiloto a bordo"
           >
             <Bus className="w-3.5 h-3.5" />
@@ -155,6 +163,31 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
   onShareArrival,
   onStartOnboard,
 }) => {
+  const [onlyRealtime, setOnlyRealtime] = React.useState<boolean>(() => {
+    const saved = localStorage.getItem('vallabus_only_realtime');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const updateRealtimeFilter = (val: boolean) => {
+    setOnlyRealtime(val);
+    try {
+      localStorage.setItem('vallabus_only_realtime', String(val));
+    } catch {
+      // ignore
+    }
+  };
+
+  const realTimeCount = data?.arrivals.filter(a => a.isRealtime).length || 0;
+  const hasScheduled = (data?.arrivals.length || 0) > realTimeCount;
+
+  const displayedArrivals = React.useMemo(() => {
+    if (!data?.arrivals) return [];
+    if (onlyRealtime) {
+      return data.arrivals.filter(a => a.isRealtime);
+    }
+    return data.arrivals;
+  }, [data?.arrivals, onlyRealtime]);
+
   return (
     <div className="p-5 overflow-y-auto flex-1 space-y-3">
       <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pb-1">
@@ -202,9 +235,61 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
         </div>
       )}
 
-      {data && data.arrivals.length > 0 && (
+      {data && data.arrivals.length > 0 && hasScheduled && (
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-xs">
+          <button
+            type="button"
+            onClick={() => updateRealtimeFilter(true)}
+            className={`flex-1 py-1.5 px-2.5 rounded-lg font-medium transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 ${
+              onlyRealtime
+                ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-xs font-bold'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Solo GPS Real ({realTimeCount})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => updateRealtimeFilter(false)}
+            className={`flex-1 py-1.5 px-2.5 rounded-lg font-medium transition-colors cursor-pointer text-center ${
+              !onlyRealtime
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+            }`}
+          >
+            <span>Todos con teóricos ({data.arrivals.length})</span>
+          </button>
+        </div>
+      )}
+
+      {onlyRealtime && displayedArrivals.length === 0 && data && data.arrivals.length > 0 && (
+        <div className="py-7 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-3">
+          <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 mx-auto flex items-center justify-center">
+            <Radio className="w-5 h-5 opacity-70" />
+          </div>
+          <div>
+            <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">
+              Sin autobuses con GPS en ruta ahora mismo
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+              Los vehículos de estas líneas aún no han iniciado su viaje desde cabecera o están fuera de servicio.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => updateRealtimeFilter(false)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200/70 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Ver salidas teóricas programadas ({data.arrivals.length})</span>
+          </button>
+        </div>
+      )}
+
+      {displayedArrivals.length > 0 && (
         <div className="space-y-2.5">
-          {data.arrivals.map(arr => {
+          {displayedArrivals.map(arr => {
             const uniqueKey = `${arr.routeShortName}_${arr.timestamp}_${arr.exactTime}_${arr.isRealtime ? 'rt' : 'sc'}`;
             return (
               <ArrivalItem
