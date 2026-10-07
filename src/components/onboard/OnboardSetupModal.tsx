@@ -140,7 +140,7 @@ export const OnboardSetupModal: React.FC<OnboardSetupModalProps> = ({
         {/* Destination Stop Selector */}
         <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-3">
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+            <label htmlFor="dest-stop-search" className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
               ¿En qué parada te quieres bajar?
             </label>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
@@ -151,7 +151,10 @@ export const OnboardSetupModal: React.FC<OnboardSetupModalProps> = ({
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
               <input
+                id="dest-stop-search"
+                name="dest-stop-search"
                 type="text"
+                aria-label="Buscar parada de destino"
                 placeholder="Buscar parada de destino..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -175,7 +178,7 @@ export const OnboardSetupModal: React.FC<OnboardSetupModalProps> = ({
                     key={stop.stopCode}
                     type="button"
                     onClick={() => setSelectedDestStop(stop)}
-                    className={`w-full p-2.5 rounded-2xl border text-left flex items-center justify-between gap-2.5 transition-all cursor-pointer ${
+                    className={`w-full p-2.5 rounded-2xl border text-left flex items-center justify-between gap-2.5 transition-colors cursor-pointer ${
                       isSelected
                         ? 'bg-teal-500/15 border-teal-500 dark:border-teal-400 shadow-sm'
                         : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -213,7 +216,7 @@ export const OnboardSetupModal: React.FC<OnboardSetupModalProps> = ({
           <button
             type="button"
             onClick={() => handleStart(selectedDestStop)}
-            className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all shadow-md shadow-teal-700/30 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors shadow-md shadow-teal-700/30 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             <span>{selectedDestStop ? 'Confirmar y Subir' : 'Subirme al bus'}</span>
             <ArrowRight className="w-4 h-4" />

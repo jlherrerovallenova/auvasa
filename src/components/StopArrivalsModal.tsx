@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Share2, Zap, Accessibility, ChevronDown, Bus } from 'lucide-react';
 import type { BusStop, StopArrival } from '../types/bus.ts';
 import { useStopArrivals } from '../hooks/useStopArrivals.ts';
@@ -26,7 +26,7 @@ interface ArrivalItemProps {
 const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, onStartOnboard }) => {
   const isArriving = arr.minutesRemaining <= 0;
   const fleet = getBusFleetInfo(arr.vehicleId);
-  const occupancy = parseOccupancy(arr.occupancy, fleet.isArticulated);
+  const occupancy = parseOccupancy(arr.occupancy);
 
   return (
     <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/70 transition-colors space-y-2.5 shadow-sm dark:shadow-md">
@@ -39,6 +39,7 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
             routeColor={arr.routeColor}
             routeTextColor={arr.routeTextColor}
             vehicleId={arr.vehicleId}
+            size="sm"
             className="shrink-0 drop-shadow-sm"
           />
           <div className="min-w-0 flex-1">
@@ -57,12 +58,9 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
                   )}
                 </span>
               ) : (
-                <span
-                  className="text-amber-600 dark:text-amber-400/90 flex items-center gap-1 font-medium truncate"
-                  title="Horario teórico oficial: el autobús aún no ha salido de cabecera o no emite señal GPS"
-                >
+                <span className="text-amber-600 dark:text-amber-400/90 flex items-center gap-1 font-medium truncate">
                   <Clock className="w-3 h-3 shrink-0" />
-                  <span>Teórico cabecera ({arr.exactTime})</span>
+                  <span>Programado ({arr.exactTime})</span>
                 </span>
               )}
             </div>
@@ -83,7 +81,7 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
             {isArriving ? 'Llegando' : `${arr.minutesRemaining} min`}
           </div>
           <div className="text-[10px] text-slate-500 mt-1 font-mono">
-            {arr.isRealtime ? `Hora: ${arr.exactTime}` : `Teórico: ${arr.exactTime}`}
+            Hora: {arr.exactTime}
           </div>
         </div>
       </div>
@@ -92,12 +90,7 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
       {arr.isRealtime && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-200/80 dark:border-slate-750/70 text-[10px]">
           <span className={`px-2 py-0.5 rounded-md font-medium border ${occupancy.bgClass} ${occupancy.colorClass}`}>
-            <span>{occupancy.label}</span>
-            {occupancy.estimatedPax && (
-              <span className="opacity-80 text-[9px] font-mono ml-1">
-                ({occupancy.estimatedPax})
-              </span>
-            )}
+            {occupancy.label}
           </span>
 
           <span className="px-2 py-0.5 rounded-md font-medium bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-750 flex items-center gap-1">
@@ -140,6 +133,162 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
           </button>
         )}
       </div>
+    </div>
+  );
+};
+
+interface RealtimeFilterTabsProps {
+  onlyRealtime: boolean;
+  onToggle: (val: boolean) => void;
+  realTimeCount: number;
+  totalCount: number;
+}
+
+const RealtimeFilterTabs: React.FC<RealtimeFilterTabsProps> = ({
+  onlyRealtime,
+  onToggle,
+  realTimeCount,
+  totalCount,
+}) => (
+  <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-xs">
+    <button
+      type="button"
+      onClick={() => onToggle(true)}
+      className={`flex-1 py-1.5 px-2.5 rounded-lg font-medium transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 ${
+        onlyRealtime
+          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-xs font-bold'
+          : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+      }`}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+      <span>Solo GPS Real ({realTimeCount})</span>
+    </button>
+    <button
+      type="button"
+      onClick={() => onToggle(false)}
+      className={`flex-1 py-1.5 px-2.5 rounded-lg font-medium transition-colors cursor-pointer text-center ${
+        !onlyRealtime
+          ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold'
+          : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+      }`}
+    >
+      <span>Todos con teóricos ({totalCount})</span>
+    </button>
+  </div>
+);
+
+const StopArrivalsLoadingState: React.FC = () => (
+  <div className="py-12 text-center text-slate-500 dark:text-slate-400">
+    <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin text-teal-500" />
+    <p className="text-sm">Consultando satélites GPS y horarios...</p>
+  </div>
+);
+
+const StopArrivalsEmptyState: React.FC = () => (
+  <div className="py-10 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-800">
+    <Clock className="w-10 h-10 mx-auto mb-2 text-slate-400 dark:text-slate-500 opacity-60" />
+    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+      Sin paso de autobuses previsto en los próximos minutos
+    </p>
+    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-xs mx-auto">
+      No hay servicios activos o en camino para las líneas de esta parada en este momento.
+    </p>
+  </div>
+);
+
+const StopArrivalsNoGpsState: React.FC<{ totalCount: number; onShowScheduled: () => void }> = ({
+  totalCount,
+  onShowScheduled,
+}) => (
+  <div className="py-7 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-3">
+    <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 mx-auto flex items-center justify-center">
+      <Radio className="w-5 h-5 opacity-70" />
+    </div>
+    <div>
+      <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">
+        Sin autobuses con GPS en ruta ahora mismo
+      </p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+        Los vehículos de estas líneas aún no han iniciado su viaje desde cabecera o están fuera de servicio.
+      </p>
+    </div>
+    <button
+      type="button"
+      onClick={onShowScheduled}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200/70 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+    >
+      <Clock className="w-3.5 h-3.5" />
+      <span>Ver salidas teóricas programadas ({totalCount})</span>
+    </button>
+  </div>
+);
+
+interface StopArrivalsListContentProps {
+  data: ReturnType<typeof useStopArrivals>['data'];
+  loading: boolean;
+  error: string | null;
+  onlyRealtime: boolean;
+  displayedArrivals: StopArrival[];
+  stop: BusStop;
+  onShowScheduled: () => void;
+  onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
+  onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
+}
+
+const StopArrivalsListContent: React.FC<StopArrivalsListContentProps> = ({
+  data,
+  loading,
+  error,
+  onlyRealtime,
+  displayedArrivals,
+  stop,
+  onShowScheduled,
+  onShareArrival,
+  onStartOnboard,
+}) => {
+  if (loading && !data) {
+    return <StopArrivalsLoadingState />;
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-300 text-sm flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="font-semibold">No se pudo cargar la información</p>
+          <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (data && data.arrivals.length === 0 && !loading) {
+    return <StopArrivalsEmptyState />;
+  }
+
+  if (onlyRealtime && displayedArrivals.length === 0 && data && data.arrivals.length > 0) {
+    return (
+      <StopArrivalsNoGpsState
+        totalCount={data.arrivals.length}
+        onShowScheduled={onShowScheduled}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-2.5">
+      {displayedArrivals.map(arr => {
+        const uniqueKey = `${arr.routeShortName}_${arr.timestamp}_${arr.exactTime}_${arr.isRealtime ? 'rt' : 'sc'}`;
+        return (
+          <ArrivalItem
+            key={uniqueKey}
+            arr={arr}
+            stop={stop}
+            onShareArrival={onShareArrival}
+            onStartOnboard={onStartOnboard}
+          />
+        );
+      })}
     </div>
   );
 };
@@ -206,103 +355,26 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
         </button>
       </div>
 
-      {loading && !data && (
-        <div className="py-12 text-center text-slate-500 dark:text-slate-400">
-          <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin text-teal-500" />
-          <p className="text-sm">Consultando satélites GPS y horarios...</p>
-        </div>
+      {hasScheduled && data && data.arrivals.length > 0 && (
+        <RealtimeFilterTabs
+          onlyRealtime={onlyRealtime}
+          onToggle={updateRealtimeFilter}
+          realTimeCount={realTimeCount}
+          totalCount={data.arrivals.length}
+        />
       )}
 
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-300 text-sm flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold">No se pudo cargar la información</p>
-            <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">{error}</p>
-          </div>
-        </div>
-      )}
-
-      {data && data.arrivals.length === 0 && !loading && (
-        <div className="py-10 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <Clock className="w-10 h-10 mx-auto mb-2 text-slate-400 dark:text-slate-500 opacity-60" />
-          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Sin paso de autobuses previsto en los próximos minutos
-          </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-xs mx-auto">
-            No hay servicios activos o en camino para las líneas de esta parada en este momento.
-          </p>
-        </div>
-      )}
-
-      {data && data.arrivals.length > 0 && hasScheduled && (
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-xs">
-          <button
-            type="button"
-            onClick={() => updateRealtimeFilter(true)}
-            className={`flex-1 py-1.5 px-2.5 rounded-lg font-medium transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 ${
-              onlyRealtime
-                ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-xs font-bold'
-                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
-            }`}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Solo GPS Real ({realTimeCount})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => updateRealtimeFilter(false)}
-            className={`flex-1 py-1.5 px-2.5 rounded-lg font-medium transition-colors cursor-pointer text-center ${
-              !onlyRealtime
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold'
-                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
-            }`}
-          >
-            <span>Todos con teóricos ({data.arrivals.length})</span>
-          </button>
-        </div>
-      )}
-
-      {onlyRealtime && displayedArrivals.length === 0 && data && data.arrivals.length > 0 && (
-        <div className="py-7 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-3">
-          <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 mx-auto flex items-center justify-center">
-            <Radio className="w-5 h-5 opacity-70" />
-          </div>
-          <div>
-            <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">
-              Sin autobuses con GPS en ruta ahora mismo
-            </p>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-              Los vehículos de estas líneas aún no han iniciado su viaje desde cabecera o están fuera de servicio.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => updateRealtimeFilter(false)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200/70 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>Ver salidas teóricas programadas ({data.arrivals.length})</span>
-          </button>
-        </div>
-      )}
-
-      {displayedArrivals.length > 0 && (
-        <div className="space-y-2.5">
-          {displayedArrivals.map(arr => {
-            const uniqueKey = `${arr.routeShortName}_${arr.timestamp}_${arr.exactTime}_${arr.isRealtime ? 'rt' : 'sc'}`;
-            return (
-              <ArrivalItem
-                key={uniqueKey}
-                arr={arr}
-                stop={stop}
-                onShareArrival={onShareArrival}
-                onStartOnboard={onStartOnboard}
-              />
-            );
-          })}
-        </div>
-      )}
+      <StopArrivalsListContent
+        data={data}
+        loading={loading}
+        error={error}
+        onlyRealtime={onlyRealtime}
+        displayedArrivals={displayedArrivals}
+        stop={stop}
+        onShowScheduled={() => updateRealtimeFilter(false)}
+        onShareArrival={onShareArrival}
+        onStartOnboard={onStartOnboard}
+      />
     </div>
   );
 };
@@ -318,11 +390,13 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
   onStartOnboard,
 }) => {
   const { data, loading, error, refresh } = useStopArrivals(stop?.code || null);
-  const [showRoutes, setShowRoutes] = useState(false);
+  const [expandedStopCode, setExpandedStopCode] = useState<string | null>(null);
+  const showRoutes = Boolean(stop && expandedStopCode === stop.code);
 
-  useEffect(() => {
-    setShowRoutes(false);
-  }, [stop?.code]);
+  const toggleRoutes = () => {
+    if (!stop) return;
+    setExpandedStopCode(prev => (prev === stop.code ? null : stop.code));
+  };
 
   if (!stop) return null;
 
@@ -382,7 +456,7 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
             <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800/60">
               <button
                 type="button"
-                onClick={() => setShowRoutes(prev => !prev)}
+                onClick={toggleRoutes}
                 className="flex items-center justify-between w-full py-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer group"
                 aria-expanded={showRoutes}
               >

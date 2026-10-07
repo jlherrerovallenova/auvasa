@@ -50,9 +50,11 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
     ) || null;
   }, [trip, liveVehicles]);
 
+  const isTripActive = Boolean(trip);
+
   // High-accuracy Geolocation watch when trip is active
   useEffect(() => {
-    if (!trip) {
+    if (!isTripActive) {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
@@ -120,7 +122,7 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
         watchIdRef.current = null;
       }
     };
-  }, [trip !== null]);
+  }, [isTripActive]);
 
   // Derive metrics
   const metrics: OnboardMetrics = useMemo(() => {
@@ -185,6 +187,8 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
   useEffect(() => {
     if (!trip || !trip.destinationStop) return;
 
+    let timerId: number | null = null;
+
     if (metrics.isApproachingDestination && !metrics.isDestinationReached) {
       const destCode = trip.destinationStop.stopCode;
       if (lastAlarmStopCodeRef.current !== destCode) {
@@ -194,7 +198,9 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
           triggerVibration([400, 150, 400, 150, 600]);
         }
         // Auto-open dashboard if it was minimized so user sees the alert
-        setIsDashboardOpen(true);
+        timerId = window.setTimeout(() => {
+          setIsDashboardOpen(true);
+        }, 0);
       }
     } else if (metrics.isDestinationReached) {
       if (lastAlarmStopCodeRef.current !== 'reached_' + trip.destinationStop.stopCode) {
@@ -203,9 +209,17 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
           playBusChime();
           triggerVibration([600]);
         }
-        setIsDashboardOpen(true);
+        timerId = window.setTimeout(() => {
+          setIsDashboardOpen(true);
+        }, 0);
       }
     }
+
+    return () => {
+      if (timerId !== null) {
+        window.clearTimeout(timerId);
+      }
+    };
   }, [metrics.isApproachingDestination, metrics.isDestinationReached, trip]);
 
   // Start trip action
@@ -290,10 +304,10 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
 
   // Set or change destination stop
   const setDestinationStop = useCallback((stop: RouteStop) => {
+    lastAlarmStopCodeRef.current = null;
     setTrip(prev => {
       if (!prev) return null;
       const idx = prev.stops.findIndex(s => s.stopCode === stop.stopCode);
-      lastAlarmStopCodeRef.current = null;
       return {
         ...prev,
         destinationStop: stop,
@@ -304,10 +318,10 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
 
   // Manual next stop advance
   const advanceToNextStop = useCallback(() => {
+    triggerVibration([50]);
     setTrip(prev => {
       if (!prev) return null;
       if (prev.currentStopIndex < prev.stops.length - 1) {
-        triggerVibration([50]);
         return {
           ...prev,
           currentStopIndex: prev.currentStopIndex + 1,
@@ -319,10 +333,10 @@ export function useOnboardTrip(liveVehicles: LiveVehicle[] = []) {
 
   // Manual prev stop
   const rewindToPrevStop = useCallback(() => {
+    triggerVibration([50]);
     setTrip(prev => {
       if (!prev) return null;
       if (prev.currentStopIndex > 0) {
-        triggerVibration([50]);
         return {
           ...prev,
           currentStopIndex: prev.currentStopIndex - 1,

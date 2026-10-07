@@ -14,6 +14,27 @@ interface BusDrawingProps {
   height?: number | string;
 }
 
+const PRESET_DIMENSIONS: Record<string, { std: [string, string]; art: [string, string] }> = {
+  xs: { std: ['28px', '14px'], art: ['38px', '14px'] },
+  sm: { std: ['34px', '17px'], art: ['46px', '17px'] },
+  md: { std: ['44px', '22px'], art: ['58px', '22px'] },
+  lg: { std: ['60px', '30px'], art: ['80px', '30px'] },
+};
+
+function resolveDimensions(
+  size: 'xs' | 'sm' | 'md' | 'lg',
+  isArticulated: boolean,
+  width?: number | string,
+  height?: number | string
+) {
+  if (width || height) {
+    return { width, height };
+  }
+  const preset = PRESET_DIMENSIONS[size] || PRESET_DIMENSIONS.sm;
+  const [w, h] = isArticulated ? preset.art : preset.std;
+  return { width: w, height: h };
+}
+
 export const BusDrawing: React.FC<BusDrawingProps> = ({
   fleet,
   lineName,
@@ -26,31 +47,7 @@ export const BusDrawing: React.FC<BusDrawingProps> = ({
   height,
 }) => {
   const isArticulated = fleet.isArticulated || fleet.typeKey === 'irizar-ie-tram-articulated' || fleet.typeKey === 'articulated-gnc';
-
-  // Compute preset dimensions if width/height are not provided
-  let computedWidth = width;
-  let computedHeight = height;
-
-  if (!computedWidth && !computedHeight) {
-    switch (size) {
-      case 'xs':
-        computedWidth = isArticulated ? '38px' : '28px';
-        computedHeight = '14px';
-        break;
-      case 'sm':
-        computedWidth = isArticulated ? '46px' : '34px';
-        computedHeight = '17px';
-        break;
-      case 'md':
-        computedWidth = isArticulated ? '58px' : '44px';
-        computedHeight = '22px';
-        break;
-      case 'lg':
-        computedWidth = isArticulated ? '80px' : '60px';
-        computedHeight = '30px';
-        break;
-    }
-  }
+  const dimensions = resolveDimensions(size, isArticulated, width, height);
 
   const svgString = getBusSvgIllustration({
     fleet,
@@ -63,7 +60,7 @@ export const BusDrawing: React.FC<BusDrawingProps> = ({
   return (
     <div
       className={`inline-flex items-center justify-center shrink-0 ${className}`}
-      style={{ width: computedWidth, height: computedHeight }}
+      style={dimensions}
       dangerouslySetInnerHTML={{ __html: svgString }}
     />
   );

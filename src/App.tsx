@@ -1,12 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Header, type ActiveTab } from './components/Header.tsx';
-import { HomeSearchView } from './components/HomeSearchView.tsx';
-import { RoutePlanner } from './components/RoutePlanner.tsx';
-import { LinesExplorerTab } from './components/LinesExplorerTab.tsx';
-import { MapViewTab } from './components/MapViewTab.tsx';
-import { MarquesinaDial } from './components/MarquesinaDial.tsx';
-import { FavoritesView } from './components/FavoritesView.tsx';
-import { AlertsView } from './components/AlertsView.tsx';
+import { AppTabContent } from './components/AppTabContent.tsx';
 import { DestinationAlarmBanner } from './components/DestinationAlarmBanner.tsx';
 import { SharedArrivalBanner } from './components/SharedArrivalBanner.tsx';
 import { StopArrivalsModal } from './components/StopArrivalsModal.tsx';
@@ -211,7 +205,6 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-6">
-        {/* Geofencing Alarm Floating Banner & Alarm Dialog */}
         <DestinationAlarmBanner
           targetStop={alarmTargetStop}
           distanceMeters={alarmDistanceMeters}
@@ -219,123 +212,44 @@ export const App: React.FC = () => {
           onCancel={cancelAlarm}
         />
 
-        {/* Shared ETA URL Welcome Banner */}
         <SharedArrivalBanner
           info={sharedArrivalBanner}
           onOpenStop={handleOpenSharedStop}
           onClose={() => setSharedArrivalBanner(null)}
         />
 
-        {/* Tab 1: Search & Home */}
-        {activeTab === 'search' && (
-          <HomeSearchView
-            stops={stops}
-            routes={routes}
-            vehiclesCount={vehicles.length}
-            popularLines={popularLines}
-            nearbyStops={nearbyStops}
-            hasLocation={userLat !== null && userLon !== null}
-            loadingLocation={loadingLocation}
-            locationError={locationError}
-            onRequestLocation={requestLocation}
-            onSelectStop={handleSelectStop}
-            onSelectRouteFromSearch={handleSelectRouteFromSearch}
-            onOpenMap={() => setActiveTab('map')}
-            onNavigateTab={handleTabChange}
-          />
-        )}
-
-        {/* Tab 2: Live Route Planner (De A a B) */}
-        {activeTab === 'routes' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <RoutePlanner
-              stops={stops}
-              routes={routes}
-              vehicles={vehicles}
-              userLat={userLat}
-              userLon={userLon}
-              onRequestLocation={requestLocation}
-              onSelectStop={handleSelectStop}
-              onSelectRoute={handleSelectRouteFromSearch}
-            />
-          </div>
-        )}
-
-        {/* Tab 3: Lines Explorer */}
-        {activeTab === 'lines' && (
-          <LinesExplorerTab
-            stops={stops}
-            routes={routes}
-            vehicles={vehicles}
-            stopsMapByCode={stopMapByCode}
-            onSelectStop={handleSelectStop}
-            onSelectRouteFromSearch={handleSelectRouteFromSearch}
-            onSelectRouteForMap={handleSelectRouteForMap}
-          />
-        )}
-
-        {/* Tab 4: Fullscreen Live Map */}
-        {activeTab === 'map' && (
-          <MapViewTab
-            stops={stops}
-            routes={routes}
-            vehicles={vehicles}
-            selectedStop={selectedStop}
-            selectedRoute={selectedRoute}
-            userLat={userLat}
-            userLon={userLon}
-            theme={theme}
-            onSelectStop={handleSelectStop}
-            onCloseStop={handleCloseStopModal}
-            isFavoriteStop={isFavoriteStop}
-            onToggleFavoriteStop={toggleFavoriteStop}
-            onSetAlarm={setAlarmForStop}
-            onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
-            onStartOnboard={handleStartOnboardFromArrival}
-            onRequestLocation={requestLocation}
-            onClearRouteFilter={() => setSelectedRoute(null)}
-          />
-        )}
-
-        {/* Tab 5: Marquesina Rápida (Teclado Táctil) */}
-        {activeTab === 'marquesina' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <MarquesinaDial
-              stops={stops}
-              onSelectStop={handleSelectStop}
-            />
-          </div>
-        )}
-
-        {/* Tab 6: Favorites */}
-        {activeTab === 'favorites' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Tus Favoritos</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                Acceso directo a tus paradas y líneas guardadas.
-              </p>
-            </div>
-
-            <FavoritesView
-              favoriteStops={favoriteStops}
-              favoriteLines={favoriteLines}
-              stopsMapByCode={stopMapByCode}
-              routeMapById={routeMapById}
-              onSelectStop={handleSelectStop}
-              onSelectRoute={handleSelectRouteFromSearch}
-              onToggleFavoriteStop={toggleFavoriteStop}
-              onToggleFavoriteLine={toggleFavoriteLine}
-            />
-          </div>
-        )}
-
-        {/* Tab 7: Alerts & Disruptions */}
-        {activeTab === 'alerts' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <AlertsView />
-          </div>
-        )}
+        <AppTabContent
+          activeTab={activeTab}
+          stops={stops}
+          routes={routes}
+          vehicles={vehicles}
+          popularLines={popularLines}
+          nearbyStops={nearbyStops}
+          userLat={userLat}
+          userLon={userLon}
+          loadingLocation={loadingLocation}
+          locationError={locationError}
+          selectedStop={selectedStop}
+          selectedRoute={selectedRoute}
+          theme={theme}
+          favoriteStops={favoriteStops}
+          favoriteLines={favoriteLines}
+          stopMapByCode={stopMapByCode}
+          routeMapById={routeMapById}
+          isFavoriteStop={isFavoriteStop}
+          onTabChange={handleTabChange}
+          onRequestLocation={requestLocation}
+          onSelectStop={handleSelectStop}
+          onCloseStopModal={handleCloseStopModal}
+          onSelectRouteFromSearch={handleSelectRouteFromSearch}
+          onSelectRouteForMap={handleSelectRouteForMap}
+          onToggleFavoriteStop={toggleFavoriteStop}
+          onToggleFavoriteLine={toggleFavoriteLine}
+          onSetAlarm={setAlarmForStop}
+          onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
+          onStartOnboard={handleStartOnboardFromArrival}
+          onClearRouteFilter={() => setSelectedRoute(null)}
+        />
       </main>
 
       {/* Stop Arrivals Modal (Shown when outside map tab; in map tab, the in-map card is used) */}

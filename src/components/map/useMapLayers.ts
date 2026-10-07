@@ -85,6 +85,17 @@ export function useMapLayers({
       userMarkerRef.current.setLatLng([userLat, userLon]);
       accuracyCircleRef.current?.setLatLng([userLat, userLon]);
     }
+
+    return () => {
+      if (userMarkerRef.current && map) {
+        map.removeLayer(userMarkerRef.current);
+        userMarkerRef.current = null;
+      }
+      if (accuracyCircleRef.current && map) {
+        map.removeLayer(accuracyCircleRef.current);
+        accuracyCircleRef.current = null;
+      }
+    };
   }, [map, userLat, userLon]);
 
   // Real-time vehicles with Kinematic Smooth Interpolation
@@ -249,6 +260,8 @@ export function useMapLayers({
       stopsToRender = stops.filter(s => routeStopCodes.has(s.code));
     }
 
+    const markers: L.Marker[] = [];
+
     for (const stop of stopsToRender) {
       const isSelected = selectedStop?.code === stop.code;
 
@@ -280,15 +293,20 @@ export function useMapLayers({
         { direction: 'top', offset: [0, -6] }
       );
 
-      marker.on('click', (e) => {
+      const handleClick = (e: L.LeafletMouseEvent) => {
         L.DomEvent.stopPropagation(e);
         onSelectStopRef.current(stop);
-      });
+      };
 
+      marker.on('click', handleClick);
       stopsLayer.addLayer(marker);
+      markers.push(marker);
     }
 
     return () => {
+      for (const m of markers) {
+        m.off('click');
+      }
       stopsLayer.clearLayers();
     };
   }, [stopsLayer, stops, selectedRoute, selectedStop, showStops]);
