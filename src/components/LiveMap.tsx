@@ -82,7 +82,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     const tileGroup = baseTilesRef.current;
     if (!tileGroup) return;
 
-    const cartoKey = import.meta.env.VITE_CARTO_API_KEY;
+    const cartoKey = import.meta.env.VITE_CARTO_API_KEY || 'cb1_4db1_1_fc01044be2119eaf93eabc9d';
 
     if (mapTheme === 'dark') {
       if (cartoKey) {
