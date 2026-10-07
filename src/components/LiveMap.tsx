@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import L from 'leaflet';
 import type { BusStop, BusRoute, LiveVehicle } from '../types/bus.ts';
+import { analyzeFleetTraffic } from '../utils/traffic.ts';
 import { MapControls } from './map/MapControls.tsx';
 import { SelectedRouteBanner } from './map/SelectedRouteBanner.tsx';
+import { TrafficStatusCard } from './map/TrafficStatusCard.tsx';
 import { useMapLayers } from './map/useMapLayers.ts';
 
 interface LiveMapProps {
@@ -36,6 +38,9 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   const [vehiclesLayer, setVehiclesLayer] = useState<L.LayerGroup | null>(null);
   const [stopsLayer, setStopsLayer] = useState<L.LayerGroup | null>(null);
   const [showStops, setShowStops] = useState(true);
+  const [showTraffic, setShowTraffic] = useState(false);
+  const [showCameras, setShowCameras] = useState(false);
+  const [showTrafficCard, setShowTrafficCard] = useState(true);
   const [mapTheme, setMapTheme] = useState<'dark' | 'streets'>(
     theme === 'light' ? 'streets' : 'dark'
   );
@@ -45,6 +50,11 @@ export const LiveMap: React.FC<LiveMapProps> = ({
       setMapTheme(theme === 'light' ? 'streets' : 'dark');
     }
   }, [theme]);
+
+  // Traffic summary analysis from live bus fleet
+  const trafficSummary = useMemo(() => {
+    return analyzeFleetTraffic(vehicles);
+  }, [vehicles]);
 
   const baseTilesRef = useRef<L.LayerGroup | null>(null);
 
@@ -77,7 +87,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     };
   }, []);
 
-  // Update Tile Layers when mapTheme changes (No watermarks, fast CloudFront / OSM)
+  // Update Tile Layers when mapTheme changes
   useEffect(() => {
     const tileGroup = baseTilesRef.current;
     if (!tileGroup) return;
@@ -157,6 +167,9 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     selectedStop,
     selectedRoute,
     showStops,
+    showTraffic,
+    showCameras,
+    trafficSummary,
     userLat,
     userLon,
     onSelectStop,
@@ -187,15 +200,32 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     setMapTheme(prev => (prev === 'dark' ? 'streets' : 'dark'));
   }, []);
 
+  const handleToggleTraffic = useCallback(() => {
+    setShowTraffic(prev => !prev);
+    setShowTrafficCard(true);
+  }, []);
+
   return (
     <div className="relative w-full h-full min-h-[500px] flex-1 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl dark:shadow-2xl bg-slate-100 dark:bg-slate-950 transition-colors">
       <div ref={mapContainerRef} className="w-full h-full z-10" />
 
+      {/* Floating Traffic Status Card */}
+      {showTraffic && showTrafficCard && (
+        <TrafficStatusCard
+          summary={trafficSummary}
+          showCameras={showCameras}
+          onToggleCameras={() => setShowCameras(prev => !prev)}
+          onClose={() => setShowTrafficCard(false)}
+        />
+      )}
+
       {/* Floating Map Controls */}
       <MapControls
         showStops={showStops}
+        showTraffic={showTraffic}
         mapTheme={mapTheme}
         onToggleStops={() => setShowStops(prev => !prev)}
+        onToggleTraffic={handleToggleTraffic}
         onToggleMapTheme={handleToggleTheme}
         onLocateMe={handleLocateMe}
         onCenterValladolid={handleCenterValladolid}

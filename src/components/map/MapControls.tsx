@@ -1,10 +1,12 @@
 import React from 'react';
-import { Locate, RotateCcw, Layers, Sun, Moon } from 'lucide-react';
+import { Locate, RotateCcw, Layers, Sun, Moon, Activity } from 'lucide-react';
 
 interface MapControlsProps {
   showStops: boolean;
+  showTraffic: boolean;
   mapTheme: 'dark' | 'streets';
   onToggleStops: () => void;
+  onToggleTraffic: () => void;
   onToggleMapTheme: () => void;
   onLocateMe: () => void;
   onCenterValladolid: () => void;
@@ -12,8 +14,10 @@ interface MapControlsProps {
 
 export const MapControls: React.FC<MapControlsProps> = ({
   showStops,
+  showTraffic,
   mapTheme,
   onToggleStops,
+  onToggleTraffic,
   onToggleMapTheme,
   onLocateMe,
   onCenterValladolid,
@@ -38,6 +42,23 @@ export const MapControls: React.FC<MapControlsProps> = ({
         aria-label="Centrar mapa en Valladolid"
       >
         <RotateCcw className="w-4 h-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={onToggleTraffic}
+        className={`w-10 h-10 rounded-xl border flex items-center justify-center shadow-lg backdrop-blur-md transition-colors active:scale-95 cursor-pointer relative ${
+          showTraffic
+            ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-700/30'
+            : 'bg-white/90 dark:bg-slate-900/90 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700/80 hover:text-slate-900 dark:hover:text-white'
+        }`}
+        title={showTraffic ? 'Desactivar Capa de Tráfico' : 'Activar Tráfico en Tiempo Real'}
+        aria-label="Alternar capa de tráfico en tiempo real"
+      >
+        <Activity className="w-4 h-4" />
+        {showTraffic && (
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+        )}
       </button>
 
       <button

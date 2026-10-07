@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Map } from 'lucide-react';
 import { LiveMap } from './LiveMap.tsx';
 import { MapStopArrivalsCard } from './map/MapStopArrivalsCard.tsx';
 import type { BusStop, BusRoute, LiveVehicle, StopArrival } from '../types/bus.ts';
+import { analyzeFleetTraffic } from '../utils/traffic.ts';
 
 interface MapViewTabProps {
   stops: BusStop[];
@@ -43,13 +44,29 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
   onRequestLocation,
   onClearRouteFilter,
 }) => {
+  const trafficSummary = useMemo(() => {
+    return analyzeFleetTraffic(vehicles);
+  }, [vehicles]);
+
   return (
     <div className="h-[calc(100dvh-185px)] min-h-[420px] flex flex-col space-y-3 animate-in fade-in duration-300">
       <div className="flex items-center justify-between px-1 gap-2 min-w-0">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Map className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
           <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">Mapa en Vivo</h2>
-          <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0 hidden xs:inline">• {vehicles.length} buses en ruta</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0 hidden xs:inline">
+            • {vehicles.length} buses en ruta
+          </span>
+
+          {/* Quick city traffic status badge */}
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 shadow-2xs">
+            <span
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ backgroundColor: trafficSummary.levelColor }}
+            />
+            <span>{trafficSummary.levelLabel}</span>
+            <span className="text-slate-400 font-normal">({trafficSummary.avgSpeedKmh} km/h)</span>
+          </div>
         </div>
 
         {selectedRoute && (

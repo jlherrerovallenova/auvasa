@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import type { BusStop, BusRoute, LiveVehicle } from '../../types/bus.ts';
+import type { CityTrafficSummary } from '../../types/traffic.ts';
+import { VALLADOLID_TRAFFIC_CAMERAS } from '../../utils/traffic.ts';
 import { getBusFleetInfo, parseOccupancy } from '../../utils/fleet.ts';
 import { getBusMarkerHtml } from '../../utils/busIcons.ts';
 
@@ -13,6 +15,9 @@ interface MapLayersProps {
   selectedStop: BusStop | null;
   selectedRoute: BusRoute | null;
   showStops: boolean;
+  showTraffic?: boolean;
+  showCameras?: boolean;
+  trafficSummary?: CityTrafficSummary;
   userLat: number | null;
   userLon: number | null;
   onSelectStop: (stop: BusStop) => void;
@@ -37,6 +42,9 @@ export function useMapLayers({
   selectedStop,
   selectedRoute,
   showStops,
+  showTraffic = false,
+  showCameras = false,
+  trafficSummary,
   userLat,
   userLon,
   onSelectStop,
@@ -44,6 +52,9 @@ export function useMapLayers({
   const userMarkerRef = useRef<L.Marker | null>(null);
   const accuracyCircleRef = useRef<L.Circle | null>(null);
   const routePolylineRef = useRef<L.Polyline | null>(null);
+  const trafficTileLayerRef = useRef<L.TileLayer | null>(null);
+  const trafficSlowSpotsLayerRef = useRef<L.LayerGroup | null>(null);
+  const trafficCamerasLayerRef = useRef<L.LayerGroup | null>(null);
 
   // Persistent vehicle markers for smooth kinematic interpolation
   const vehicleTrackerRef = useRef<Map<string, InterpolatedVehicle>>(new Map());
@@ -183,7 +194,7 @@ export function useMapLayers({
         entry.targetLat = v.lat;
         entry.targetLon = v.lon;
         entry.startTime = now;
-        entry.duration = 8500; // interpolate over 8.5 seconds
+        entry.duration = 8500;
         entry.marker.setIcon(icon);
         entry.marker.setPopupContent(popupContent);
       } else {
@@ -204,7 +215,7 @@ export function useMapLayers({
       }
     }
 
-    // Remove obsolete vehicles
+    // Clean up vehicles no longer in data
     for (const [key, entry] of tracker.entries()) {
       if (!activeVehicleIds.has(key)) {
         vehiclesLayer.removeLayer(entry.marker);
@@ -212,11 +223,11 @@ export function useMapLayers({
       }
     }
 
-    // Kinematic Animation Loop (Smooth Lerp)
-    const animateVehicles = (currentTime: number) => {
+    // Animation frame loop for buttery-smooth movement
+    const animateVehicles = (timestamp: number) => {
       for (const entry of tracker.values()) {
-        const elapsed = currentTime - entry.startTime;
-        const progress = Math.min(1, Math.max(0, elapsed / entry.duration));
+        const elapsed = timestamp - entry.startTime;
+        const progress = Math.min(elapsed / entry.duration, 1);
 
         // Smooth cubic ease-out
         const ease = 1 - Math.pow(1 - progress, 3);
@@ -345,4 +356,152 @@ export function useMapLayers({
       }
     };
   }, [map, selectedRoute]);
+
+  // Live Traffic Flow Overlay Layer
+  useEffect(() => {
+    if (!map) return;
+
+    if (trafficTileLayerRef.current) {
+      map.removeLayer(trafficTileLayerRef.current);
+      trafficTileLayerRef.current = null;
+    }
+
+    if (showTraffic) {
+      const trafficLayer = L.tileLayer('https://mt1.google.com/vt?lyrs=traffic&x={x}&y={y}&z={z}', {
+        opacity: 0.85,
+        zIndex: 10,
+        maxZoom: 20,
+      }).addTo(map);
+
+      trafficTileLayerRef.current = trafficLayer;
+    }
+
+    return () => {
+      if (trafficTileLayerRef.current && map) {
+        map.removeLayer(trafficTileLayerRef.current);
+        trafficTileLayerRef.current = null;
+      }
+    };
+  }, [map, showTraffic]);
+
+  // Traffic Slow Spots & Congestion Badges Layer
+  useEffect(() => {
+    if (!map) return;
+
+    if (trafficSlowSpotsLayerRef.current) {
+      map.removeLayer(trafficSlowSpotsLayerRef.current);
+      trafficSlowSpotsLayerRef.current = null;
+    }
+
+    if (showTraffic && trafficSummary && trafficSummary.slowSpots.length > 0) {
+      const group = L.layerGroup().addTo(map);
+
+      for (const spot of trafficSummary.slowSpots) {
+        const isSevere = spot.level === 'congested';
+        const spotIcon = L.divIcon({
+          className: 'traffic-slow-spot-icon',
+          html: `
+            <div style="
+              display: flex;
+              align-items: center;
+              gap: 4px;
+              background: ${isSevere ? '#dc2626' : '#d97706'};
+              color: #ffffff;
+              font-size: 10px;
+              font-weight: 800;
+              padding: 2px 6px;
+              border-radius: 9999px;
+              border: 1.5px solid #ffffff;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+              white-space: nowrap;
+              animation: ${isSevere ? 'pulse 1.5s infinite' : 'none'};
+            ">
+              <span>⚠️</span>
+              <span>Línea ${spot.busLine} (${spot.speed} km/h)</span>
+            </div>
+          `,
+          iconSize: [120, 24],
+          iconAnchor: [60, 12],
+        });
+
+        const marker = L.marker([spot.lat, spot.lon], { icon: spotIcon });
+        marker.bindTooltip(
+          `<strong>Tramo lento detectado</strong><br/>Línea ${spot.busLine} circulando a ${spot.speed} km/h (${spot.locationName})`,
+          { direction: 'top', offset: [0, -10] }
+        );
+        group.addLayer(marker);
+      }
+
+      trafficSlowSpotsLayerRef.current = group;
+    }
+
+    return () => {
+      if (trafficSlowSpotsLayerRef.current && map) {
+        map.removeLayer(trafficSlowSpotsLayerRef.current);
+        trafficSlowSpotsLayerRef.current = null;
+      }
+    };
+  }, [map, showTraffic, trafficSummary]);
+
+  // Traffic Cameras Layer
+  useEffect(() => {
+    if (!map) return;
+
+    if (trafficCamerasLayerRef.current) {
+      map.removeLayer(trafficCamerasLayerRef.current);
+      trafficCamerasLayerRef.current = null;
+    }
+
+    if (showTraffic && showCameras) {
+      const group = L.layerGroup().addTo(map);
+
+      for (const cam of VALLADOLID_TRAFFIC_CAMERAS) {
+        const camIcon = L.divIcon({
+          className: 'traffic-camera-icon',
+          html: `
+            <div style="
+              width: 28px;
+              height: 28px;
+              background: #0284c7;
+              color: #ffffff;
+              border: 2px solid #ffffff;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+              cursor: pointer;
+              font-size: 14px;
+            ">
+              📷
+            </div>
+          `,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        });
+
+        const popupContent = `
+          <div style="min-width: 210px; font-family: -apple-system, sans-serif;">
+            <div style="font-weight: 800; font-size: 13px; color: #ffffff; margin-bottom: 2px;">${cam.name}</div>
+            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px;">${cam.location}</div>
+            <img src="${cam.imageUrl}" alt="${cam.name}" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid #334155;" />
+            <div style="font-size: 10px; color: #38bdf8; font-weight: 700; margin-top: 4px; text-align: right;">Cámara en directo • Valladolid</div>
+          </div>
+        `;
+
+        const marker = L.marker([cam.lat, cam.lon], { icon: camIcon });
+        marker.bindPopup(popupContent);
+        group.addLayer(marker);
+      }
+
+      trafficCamerasLayerRef.current = group;
+    }
+
+    return () => {
+      if (trafficCamerasLayerRef.current && map) {
+        map.removeLayer(trafficCamerasLayerRef.current);
+        trafficCamerasLayerRef.current = null;
+      }
+    };
+  }, [map, showTraffic, showCameras]);
 }
