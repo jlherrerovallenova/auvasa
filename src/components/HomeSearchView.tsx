@@ -144,13 +144,6 @@ export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
         )}
       </div>
 
-      {/* Daily Routine Commute Card */}
-      <DailyRoutineCard
-        stops={stops}
-        routes={routes}
-        onSelectStop={onSelectStop}
-      />
-
       {/* Nearby Stops Section */}
       <NearbyStops
         nearbyStops={nearbyStops}
@@ -185,6 +178,13 @@ export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
           <span>Abrir Mapa en Directo</span>
         </button>
       </div>
+
+      {/* Daily Routine Commute Card */}
+      <DailyRoutineCard
+        stops={stops}
+        routes={routes}
+        onSelectStop={onSelectStop}
+      />
     </div>
   );
 };
