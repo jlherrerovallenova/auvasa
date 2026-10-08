@@ -23,7 +23,7 @@ interface NavItemDef {
 }
 
 const DESKTOP_NAV_ITEMS: NavItemDef[] = [
-  { id: 'routes', label: 'Rutas', icon: Route },
+  { id: 'routes', label: 'Cómo llegar', icon: Route },
   { id: 'lines', label: 'Líneas', icon: Bus },
   { id: 'map', label: 'Mapa', icon: Compass },
   { id: 'marquesina', label: 'Marquesina', icon: Hash },
@@ -33,7 +33,7 @@ const DESKTOP_NAV_ITEMS: NavItemDef[] = [
 
 const MAIN_MOBILE_TABS = [
   { id: 'lines' as const, label: 'Líneas', icon: Bus },
-  { id: 'routes' as const, label: 'Rutas', icon: Route },
+  { id: 'routes' as const, label: 'Cómo llegar', icon: Route },
   { id: 'map' as const, label: 'Mapa', icon: Compass },
   { id: 'favorites' as const, label: 'Favoritos', icon: Star },
 ];
