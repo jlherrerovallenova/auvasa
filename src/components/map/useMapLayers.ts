@@ -132,9 +132,8 @@ export function useMapLayers({
       const fleet = getBusFleetInfo(v.vehicleId);
       const occupancy = parseOccupancy(v.occupancy);
 
-      const isArticulated = fleet.isArticulated || fleet.typeKey === 'irizar-ie-tram-articulated' || fleet.typeKey === 'articulated-gnc';
-      const markerWidth = isArticulated ? 62 : 46;
-      const markerHeight = 26;
+      const markerWidth = 36;
+      const markerHeight = 36;
 
       const markerHtml = getBusMarkerHtml({
         fleet,
