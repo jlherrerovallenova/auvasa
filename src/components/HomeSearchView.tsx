@@ -9,8 +9,8 @@ import { Radio, Compass, Route, Hash, AlertCircle, Bus, Star } from 'lucide-reac
 interface HomeSearchViewProps {
   stops: BusStop[];
   routes: BusRoute[];
-  vehiclesCount: number;
-  popularLines: BusRoute[];
+  vehiclesCount?: number;
+  popularLines?: BusRoute[];
   nearbyStops: BusStop[];
   hasLocation: boolean;
   loadingLocation: boolean;
@@ -25,8 +25,7 @@ interface HomeSearchViewProps {
 export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
   stops,
   routes,
-  vehiclesCount,
-  popularLines,
+  vehiclesCount = 0,
   nearbyStops,
   hasLocation,
   loadingLocation,
@@ -47,24 +46,6 @@ export const HomeSearchView: React.FC<HomeSearchViewProps> = ({
           onSelectStop={onSelectStop}
           onSelectRoute={onSelectRouteFromSearch}
         />
-
-        {/* Quick Popular Lines Pills */}
-        {popularLines.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-2 mt-3.5">
-            <span className="text-xs text-slate-500 font-semibold mr-1">Líneas rápidas:</span>
-            {popularLines.map(line => (
-              <button
-                key={line.id}
-                type="button"
-                onClick={() => onSelectRouteFromSearch(line)}
-                className="px-2.5 py-1 rounded-lg font-black text-xs transition-transform hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
-                style={{ backgroundColor: line.color, color: line.textColor }}
-              >
-                {line.shortName}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Quick Tools & Options Shortcut Grid */}
         {onNavigateTab && (
