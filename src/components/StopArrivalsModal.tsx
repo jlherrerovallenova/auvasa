@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Zap, Accessibility, ChevronDown, Bus, Footprints } from 'lucide-react';
+import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, ChevronDown, Bus, Footprints } from 'lucide-react';
 import type { BusStop, StopArrival } from '../types/bus.ts';
 import { useStopArrivals } from '../hooks/useStopArrivals.ts';
-import { getBusFleetInfo, parseOccupancy } from '../utils/fleet.ts';
+import { getBusFleetInfo } from '../utils/fleet.ts';
 import { calculateWalkingRadar } from '../utils/walkingRadar.ts';
 import { BusDrawing } from './BusDrawing.tsx';
 
@@ -32,6 +32,40 @@ interface ArrivalItemProps {
   onLocateBus?: (arrival: StopArrival) => void;
 }
 
+interface RadarBadgeProps {
+  radar: NonNullable<ReturnType<typeof calculateWalkingRadar>>;
+}
+
+const RadarBadge: React.FC<RadarBadgeProps> = ({ radar }) => (
+  <span
+    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold text-[10px] border shrink-0 ${radar.badgeClass}`}
+    title={`${radar.label} • ${radar.subLabel}`}
+  >
+    {radar.status === 'relaxed' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
+    {radar.status === 'tight' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />}
+    {radar.status === 'missed' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
+    {radar.status === 'at_stop' && <Footprints className="w-2.5 h-2.5 text-teal-600 dark:text-teal-400 shrink-0" />}
+    <span>{radar.shortLabel}</span>
+  </span>
+);
+
+const ArrivalRealtimeStatus: React.FC<{ isRealtime: boolean; exactTime: string }> = ({
+  isRealtime,
+  exactTime,
+}) => (
+  isRealtime ? (
+    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+      <span>GPS ({exactTime})</span>
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
+      <Clock className="w-3 h-3 shrink-0" />
+      <span>{exactTime}</span>
+    </span>
+  )
+);
+
 const ArrivalItem: React.FC<ArrivalItemProps> = ({
   arr,
   allArrivals,
@@ -43,7 +77,6 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
 }) => {
   const isArriving = arr.minutesRemaining <= 0;
   const fleet = getBusFleetInfo(arr.vehicleId);
-  const occupancy = parseOccupancy(arr.occupancy);
   const radar = calculateWalkingRadar(
     userLat ?? null,
     userLon ?? null,
@@ -60,9 +93,9 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
       title="Toca para ver este autobús en el mapa"
     >
       {/* 1. Main Row: Line Badge, Destination & Time */}
-      <div className="flex items-start justify-between gap-2.5">
+      <div className="flex items-center justify-between gap-2.5">
         {/* Left: Line drawing + Destination */}
-        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <BusDrawing
             fleet={fleet}
             lineName={arr.routeShortName}
@@ -70,46 +103,12 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
             routeTextColor={arr.routeTextColor}
             vehicleId={arr.vehicleId}
             size="sm"
-            className="shrink-0 drop-shadow-2xs transition-transform group-hover:scale-105 mt-0.5"
+            className="shrink-0 drop-shadow-2xs transition-transform group-hover:scale-105"
           />
           <div className="min-w-0 flex-1">
-            <span className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-tight block truncate group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
-              {arr.destination || `Línea ${arr.routeShortName}`}
-            </span>
-
-            {/* Badges row: GPS status + Walking radar (shortLabel, clean and readable) */}
-            <div className="flex items-center gap-1.5 mt-1 text-[11px] flex-wrap">
-              {arr.isRealtime ? (
-                <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                  <span>GPS Real</span>
-                  {arr.licensePlate && (
-                    <span className="text-slate-400 dark:text-slate-500 font-mono text-[10px]">
-                      {arr.licensePlate}
-                    </span>
-                  )}
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
-                  <Clock className="w-3 h-3 shrink-0" />
-                  <span>Teórico</span>
-                </span>
-              )}
-
-              {/* Walking Radar Badge with shortLabel */}
-              {radar && (
-                <span
-                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold text-[10px] border shrink-0 ${radar.badgeClass}`}
-                  title={`${radar.label} • ${radar.subLabel}`}
-                >
-                  {radar.status === 'relaxed' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
-                  {radar.status === 'tight' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />}
-                  {radar.status === 'missed' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
-                  {radar.status === 'at_stop' && <Footprints className="w-2.5 h-2.5 text-teal-600 dark:text-teal-400 shrink-0" />}
-                  <span>{radar.shortLabel}</span>
-                </span>
-              )}
-            </div>
+            <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
+              {arr.destination ? `${arr.routeShortName} • ${arr.destination}` : `Línea ${arr.routeShortName}`}
+            </h4>
           </div>
         </div>
 
@@ -126,44 +125,21 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
           >
             {isArriving ? 'Llegando' : `${arr.minutesRemaining} min`}
           </div>
-          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
-            Hora: {arr.exactTime}
-          </div>
         </div>
       </div>
 
-      {/* 2. Secondary Row: Attributes & Compact Actions */}
+      {/* 2. Secondary Row: GPS/Hora, Radar & Compact Actions */}
       <div
-        className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800"
+        className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[11px]"
         onClick={e => e.stopPropagation()}
       >
-        {/* Left: Compact vehicle attributes */}
-        <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 min-w-0 flex-1 overflow-hidden">
-          {arr.isRealtime && occupancy.label !== 'Aforo no disponible' && (
-            <span className={`px-1.5 py-0.5 rounded font-medium border truncate ${occupancy.bgClass} ${occupancy.colorClass}`}>
-              {occupancy.label}
-            </span>
-          )}
-
-          {fleet.propulsion === '100% Eléctrico' ? (
-            <span className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center gap-0.5 shrink-0 font-medium">
-              <Zap className="w-2.5 h-2.5 text-emerald-500" />
-              <span>Eléctrico</span>
-            </span>
-          ) : fleet.model ? (
-            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 truncate hidden xs:inline-block">
-              {fleet.model}
-            </span>
-          ) : null}
-
-          {fleet.hasPMR && (
-            <span className="px-1 py-0.5 rounded bg-sky-50 dark:bg-slate-900 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-slate-800 flex items-center shrink-0" title="Accesible PMR">
-              <Accessibility className="w-2.5 h-2.5" />
-            </span>
-          )}
+        {/* Left: GPS status + Radar */}
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+          <ArrivalRealtimeStatus isRealtime={arr.isRealtime} exactTime={arr.exactTime} />
+          {radar && <RadarBadge radar={radar} />}
         </div>
 
-        {/* Right: Actions (Mapa, Subir, Compartir) */}
+        {/* Right: Actions (Mapa, Subir) */}
         <div className="flex items-center gap-1 shrink-0">
           {onLocateBus && (
             <button

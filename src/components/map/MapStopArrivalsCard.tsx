@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, RefreshCw, Clock, Bell, AlertCircle, ChevronDown, Bus, MapPin, Minimize2, Maximize2, Footprints } from 'lucide-react';
+import { X, Star, RefreshCw, Clock, AlertCircle, ChevronDown, Bus, MapPin, Minimize2, Maximize2, Footprints } from 'lucide-react';
 import type { BusStop, StopArrival } from '../../types/bus.ts';
 import { useStopArrivals } from '../../hooks/useStopArrivals.ts';
 import { getBusFleetInfo } from '../../utils/fleet.ts';
@@ -31,6 +31,40 @@ interface MapArrivalRowProps {
   onLocateBus?: (arrival: StopArrival) => void;
 }
 
+interface RadarBadgeProps {
+  radar: NonNullable<ReturnType<typeof calculateWalkingRadar>>;
+}
+
+const RadarBadge: React.FC<RadarBadgeProps> = ({ radar }) => (
+  <span
+    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold text-[10px] border shrink-0 ${radar.badgeClass}`}
+    title={`${radar.label} • ${radar.subLabel}`}
+  >
+    {radar.status === 'relaxed' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
+    {radar.status === 'tight' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />}
+    {radar.status === 'missed' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
+    {radar.status === 'at_stop' && <Footprints className="w-2.5 h-2.5 text-teal-600 dark:text-teal-400 shrink-0" />}
+    <span>{radar.shortLabel}</span>
+  </span>
+);
+
+const ArrivalRealtimeStatus: React.FC<{ isRealtime: boolean; exactTime: string }> = ({
+  isRealtime,
+  exactTime,
+}) => (
+  isRealtime ? (
+    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+      <span>GPS ({exactTime})</span>
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
+      <Clock className="w-3 h-3 shrink-0" />
+      <span>{exactTime}</span>
+    </span>
+  )
+);
+
 const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
   arr,
   allArrivals,
@@ -54,85 +88,32 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
   return (
     <div
       onClick={() => onLocateBus?.(arr)}
-      className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-teal-50/50 dark:hover:bg-slate-800 border border-slate-200/80 hover:border-teal-400/60 dark:border-slate-750 dark:hover:border-teal-500/50 transition-colors flex items-center justify-between gap-2.5 shadow-2xs cursor-pointer group"
-      title="Pulsa para ver la ubicación de este autobús en el mapa"
+      className="p-3 rounded-2xl bg-white dark:bg-slate-850 hover:bg-teal-50/50 dark:hover:bg-slate-800 border border-slate-200/90 hover:border-teal-400 dark:border-slate-750 dark:hover:border-teal-500/60 transition-colors shadow-2xs space-y-2 cursor-pointer group"
+      title="Toca para ver la ubicación de este autobús en el mapa"
     >
-      {/* Left: Bus Drawing & Destination */}
-      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-        <BusDrawing
-          fleet={fleet}
-          lineName={arr.routeShortName}
-          routeColor={arr.routeColor || '#008075'}
-          routeTextColor={arr.routeTextColor || '#FFFFFF'}
-          vehicleId={arr.vehicleId}
-          size="sm"
-          className="shrink-0 drop-shadow-2xs transition-transform group-hover:scale-105"
-        />
-        <div className="min-w-0 flex-1">
-          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white block truncate group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
-            {arr.destination || `Línea ${arr.routeShortName}`}
-          </span>
-          <div className="flex items-center gap-1.5 mt-0.5 text-[10px] flex-wrap">
-            {arr.isRealtime ? (
-              <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span>GPS ({fleet.model})</span>
-              </span>
-            ) : (
-              <span className="text-amber-600 dark:text-amber-400/90 flex items-center gap-1 font-medium truncate">
-                <Clock className="w-2.5 h-2.5 shrink-0" />
-                <span>Horario ({arr.exactTime})</span>
-              </span>
-            )}
-
-            {/* Radar '¿Llego a tiempo a pie?' badge */}
-            {radar && (
-              <span
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold text-[9px] border shrink-0 ${radar.badgeClass}`}
-                title={`${radar.label} • ${radar.subLabel}`}
-              >
-                {radar.status === 'relaxed' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
-                {radar.status === 'tight' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />}
-                {radar.status === 'missed' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
-                {radar.status === 'at_stop' && <Footprints className="w-2.5 h-2.5 text-teal-600 dark:text-teal-400 shrink-0" />}
-                <span>{radar.shortLabel}</span>
-              </span>
-            )}
+      {/* 1. LÍNEA DE ARRIBA: Número de línea, Nombre completo de la línea y Minutos restantes */}
+      <div className="flex items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <BusDrawing
+            fleet={fleet}
+            lineName={arr.routeShortName}
+            routeColor={arr.routeColor || '#008075'}
+            routeTextColor={arr.routeTextColor || '#FFFFFF'}
+            vehicleId={arr.vehicleId}
+            size="sm"
+            className="shrink-0 drop-shadow-2xs transition-transform group-hover:scale-105"
+          />
+          <div className="min-w-0 flex-1">
+            <h4 className="font-bold text-sm text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
+              {arr.destination ? `${arr.routeShortName} • ${arr.destination}` : `Línea ${arr.routeShortName}`}
+            </h4>
           </div>
         </div>
-      </div>
 
-      {/* Right: Actions & Arrival Time Badge */}
-      <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
-        {onLocateBus && (
-          <button
-            type="button"
-            onClick={() => onLocateBus(arr)}
-            className="p-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900/80 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800 transition-colors cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1 text-[11px] font-bold"
-            title="Ver ubicación de este autobús en el mapa"
-            aria-label="Ver ubicación en el mapa"
-          >
-            <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-            <span className="hidden sm:inline">Mapa</span>
-          </button>
-        )}
-
-        {onStartOnboard && (
-          <button
-            type="button"
-            onClick={() => onStartOnboard(stop, arr)}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-[10px] shadow-2xs transition-colors cursor-pointer"
-            title="Subirme a este bus (Copiloto a bordo)"
-            aria-label="Subirme a este bus"
-          >
-            <Bus className="w-3 h-3" />
-            <span className="hidden xs:inline">Subirme</span>
-          </button>
-        )}
-
+        {/* Badge de Minutos */}
         <div className="text-right shrink-0">
           <div
-            className={`inline-flex items-center px-2 py-1 rounded-xl font-black text-xs shadow-2xs ${
+            className={`inline-flex items-center px-2.5 py-1 rounded-xl font-black text-xs sm:text-sm shadow-2xs ${
               isArriving
                 ? 'bg-emerald-500 text-slate-950 animate-pulse font-extrabold'
                 : arr.isRealtime
@@ -142,9 +123,45 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
           >
             {isArriving ? 'Llegando' : `${arr.minutesRemaining} min`}
           </div>
-          <div className="text-[9px] text-slate-400 font-mono mt-0.5">
-            {arr.exactTime}
-          </div>
+        </div>
+      </div>
+
+      {/* 2. LÍNEA DE ABAJO: Hora/GPS, Radar '¿Llego a tiempo?' y Botones */}
+      <div
+        className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[11px]"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Izquierda: Estado en tiempo real y radar */}
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+          <ArrivalRealtimeStatus isRealtime={arr.isRealtime} exactTime={arr.exactTime} />
+          {radar && <RadarBadge radar={radar} />}
+        </div>
+
+        {/* Derecha: Botones de acción */}
+        <div className="flex items-center gap-1 shrink-0">
+          {onLocateBus && (
+            <button
+              type="button"
+              onClick={() => onLocateBus(arr)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/80 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800 text-[11px] font-bold transition-colors cursor-pointer active:scale-95 shadow-2xs"
+              title="Ver ubicación en el mapa"
+            >
+              <MapPin className="w-3 h-3 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span>Mapa</span>
+            </button>
+          )}
+
+          {onStartOnboard && (
+            <button
+              type="button"
+              onClick={() => onStartOnboard(stop, arr)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-[11px] shadow-2xs transition-colors cursor-pointer active:scale-95"
+              title="Subirme a este bus (Copiloto a bordo)"
+            >
+              <Bus className="w-3 h-3 shrink-0" />
+              <span>Subir</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -168,26 +185,25 @@ const MapHeaderActionButtons: React.FC<MapHeaderActionButtonsProps> = ({
   isMinimized,
   onRefresh,
   onToggleFavorite,
-  onSetAlarm,
   onToggleMinimize,
   onClose,
 }) => (
-  <div className="flex items-center gap-1 shrink-0">
+  <div className="flex items-center gap-0.5 shrink-0">
     <button
       type="button"
       onClick={onRefresh}
       disabled={loading}
-      className="p-1.5 sm:p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+      className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
       title="Actualizar tiempos en directo"
       aria-label="Actualizar tiempos en directo"
     >
-      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-600' : ''}`} />
+      <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-teal-600' : ''}`} />
     </button>
 
     <button
       type="button"
       onClick={onToggleFavorite}
-      className={`p-1.5 sm:p-2 rounded-xl transition-colors cursor-pointer ${
+      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
         isFavorite
           ? 'text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 bg-amber-500/10'
           : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800'
@@ -195,39 +211,27 @@ const MapHeaderActionButtons: React.FC<MapHeaderActionButtonsProps> = ({
       title={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
       aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
     >
-      <Star className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+      <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-current' : ''}`} />
     </button>
-
-    {onSetAlarm && (
-      <button
-        type="button"
-        onClick={onSetAlarm}
-        className="p-1.5 sm:p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-        title="Avisarme al llegar por GPS"
-        aria-label="Avisarme al llegar"
-      >
-        <Bell className="w-4 h-4" />
-      </button>
-    )}
 
     <button
       type="button"
       onClick={onToggleMinimize}
-      className="p-1.5 sm:p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-      title={isMinimized ? 'Expandir tarjeta de parada' : 'Minimizar tarjeta para ver el mapa'}
+      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+      title={isMinimized ? 'Expandir tarjeta' : 'Minimizar tarjeta para ver el mapa'}
       aria-label={isMinimized ? 'Expandir tarjeta' : 'Minimizar tarjeta'}
     >
-      {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+      {isMinimized ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
     </button>
 
     <button
       type="button"
       onClick={onClose}
-      className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer ml-0.5"
+      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
       title="Cerrar panel de parada"
       aria-label="Cerrar panel de parada"
     >
-      <X className="w-4 h-4" />
+      <X className="w-3.5 h-3.5" />
     </button>
   </div>
 );
@@ -259,18 +263,18 @@ const MapStopCardHeader: React.FC<MapStopCardHeaderProps> = ({
   onToggleRoutes,
   onToggleMinimize,
 }) => (
-  <div className="p-3.5 sm:p-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-850/80 shrink-0">
+  <div className="p-3 sm:p-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/90 dark:bg-slate-850/90 shrink-0">
     <div className="flex items-start justify-between gap-2">
-      <div className="flex items-start gap-2.5 min-w-0 flex-1">
-        <span className="bg-teal-600 text-white font-mono font-black text-xs sm:text-sm px-2.5 py-1 rounded-xl shadow-sm shrink-0">
+      <div className="flex items-start gap-2 min-w-0 flex-1">
+        <span className="bg-teal-600 text-white font-mono font-bold text-xs px-2 py-0.5 rounded-lg shadow-sm shrink-0 mt-0.5">
           #{stop.code}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight line-clamp-2">
+          <h3 className="font-bold text-sm text-slate-900 dark:text-white leading-snug line-clamp-2">
             {stop.name}
           </h3>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-            Parada AUVASA • {stop.routes.length} {stop.routes.length === 1 ? 'línea' : 'líneas'}
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            AUVASA • {stop.routes.length} {stop.routes.length === 1 ? 'línea' : 'líneas'}
           </p>
         </div>
       </div>
