@@ -65,6 +65,49 @@ const ArrivalRealtimeStatus: React.FC<{ isRealtime: boolean; exactTime: string }
   )
 );
 
+const ArrivalActionButtons: React.FC<{
+  stop: BusStop;
+  arr: StopArrival;
+  onLocateBus?: (arrival: StopArrival) => void;
+  onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
+}> = ({ stop, arr, onLocateBus, onStartOnboard }) => {
+  if (!onLocateBus && !onStartOnboard) return null;
+
+  return (
+    <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+      {onLocateBus && (
+        <button
+          type="button"
+          onClick={e => {
+            e.stopPropagation();
+            onLocateBus(arr);
+          }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/80 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800 text-xs font-bold transition-colors active:scale-98 cursor-pointer shadow-2xs"
+          title="Ver mapa de posición de este autobús"
+        >
+          <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+          <span>Posición en mapa</span>
+        </button>
+      )}
+
+      {onStartOnboard && (
+        <button
+          type="button"
+          onClick={e => {
+            e.stopPropagation();
+            onStartOnboard(stop, arr);
+          }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold shadow-2xs transition-colors active:scale-98 cursor-pointer"
+          title="Subirme a este autobús (Copiloto a bordo)"
+        >
+          <Bus className="w-3.5 h-3.5 shrink-0" />
+          <span>Subir</span>
+        </button>
+      )}
+    </div>
+  );
+};
+
 const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
   arr,
   allArrivals,
@@ -87,11 +130,19 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => onLocateBus?.(arr)}
-      className="p-3 rounded-2xl bg-white dark:bg-slate-850 hover:bg-teal-50/50 dark:hover:bg-slate-800 border border-slate-200/90 hover:border-teal-400 dark:border-slate-750 dark:hover:border-teal-500/60 transition-colors shadow-2xs space-y-2 cursor-pointer group"
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onLocateBus?.(arr);
+        }
+      }}
+      className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-850 hover:bg-teal-50/50 dark:hover:bg-slate-800 border border-slate-200/90 hover:border-teal-400 dark:border-slate-750 dark:hover:border-teal-500/60 transition-colors shadow-2xs space-y-2.5 cursor-pointer group text-left"
       title="Toca para ver la ubicación de este autobús en el mapa"
     >
-      {/* 1. LÍNEA DE ARRIBA: Número de línea, Nombre completo de la línea y Minutos restantes */}
+      {/* 1. LÍNEA 1: nº de línea - nombre de la línea - tiempo restante */}
       <div className="flex items-center justify-between gap-2.5">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <BusDrawing
@@ -110,7 +161,7 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
           </div>
         </div>
 
-        {/* Badge de Minutos */}
+        {/* Tiempo restante */}
         <div className="text-right shrink-0">
           <div
             className={`inline-flex items-center px-2.5 py-1 rounded-xl font-black text-xs sm:text-sm shadow-2xs ${
@@ -126,44 +177,26 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
         </div>
       </div>
 
-      {/* 2. LÍNEA DE ABAJO: Hora/GPS, Radar '¿Llego a tiempo?' y Botones */}
-      <div
-        className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[11px]"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Izquierda: Estado en tiempo real y radar */}
-        <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+      {/* 2. LÍNEA 2: hora de llegada - indicación de si llegas a tiempo o no en función de la posición */}
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-1.5 shrink-0">
           <ArrivalRealtimeStatus isRealtime={arr.isRealtime} exactTime={arr.exactTime} />
-          {radar && <RadarBadge radar={radar} />}
         </div>
 
-        {/* Derecha: Botones de acción */}
-        <div className="flex items-center gap-1 shrink-0">
-          {onLocateBus && (
-            <button
-              type="button"
-              onClick={() => onLocateBus(arr)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/80 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800 text-[11px] font-bold transition-colors cursor-pointer active:scale-95 shadow-2xs"
-              title="Ver ubicación en el mapa"
-            >
-              <MapPin className="w-3 h-3 text-teal-600 dark:text-teal-400 shrink-0" />
-              <span>Mapa</span>
-            </button>
-          )}
-
-          {onStartOnboard && (
-            <button
-              type="button"
-              onClick={() => onStartOnboard(stop, arr)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-[11px] shadow-2xs transition-colors cursor-pointer active:scale-95"
-              title="Subirme a este bus (Copiloto a bordo)"
-            >
-              <Bus className="w-3 h-3 shrink-0" />
-              <span>Subir</span>
-            </button>
-          )}
-        </div>
+        {radar && (
+          <div className="min-w-0 flex items-center justify-end shrink-0">
+            <RadarBadge radar={radar} />
+          </div>
+        )}
       </div>
+
+      {/* 3. LÍNEA 3: mapa de posición del bus · subir */}
+      <ArrivalActionButtons
+        stop={stop}
+        arr={arr}
+        onLocateBus={onLocateBus}
+        onStartOnboard={onStartOnboard}
+      />
     </div>
   );
 };
