@@ -110,6 +110,9 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
             onShareArrival={onShareArrival}
             onStartOnboard={onStartOnboard}
             onLocateBus={onLocateBus}
+            userLat={userLat}
+            userLon={userLon}
+            onRequestLocation={onRequestLocation}
           />
         )}
       </div>

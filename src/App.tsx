@@ -301,6 +301,9 @@ export const App: React.FC = () => {
         onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
         onStartOnboard={handleStartOnboardFromArrival}
         onLocateBus={handleLocateBus}
+        userLat={userLat}
+        userLon={userLon}
+        onRequestLocation={requestLocation}
       />
 
       {/* Live ETA Sharing Modal */}

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Share2, Zap, Accessibility, ChevronDown, Bus } from 'lucide-react';
+import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Share2, Zap, Accessibility, ChevronDown, Bus, Footprints } from 'lucide-react';
 import type { BusStop, StopArrival } from '../types/bus.ts';
 import { useStopArrivals } from '../hooks/useStopArrivals.ts';
 import { getBusFleetInfo, parseOccupancy } from '../utils/fleet.ts';
+import { calculateWalkingRadar } from '../utils/walkingRadar.ts';
 import { BusDrawing } from './BusDrawing.tsx';
 
 interface StopArrivalsModalProps {
@@ -15,20 +16,43 @@ interface StopArrivalsModalProps {
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
   onLocateBus?: (arrival: StopArrival) => void;
+  userLat?: number | null;
+  userLon?: number | null;
+  onRequestLocation?: () => void;
 }
 
 interface ArrivalItemProps {
   arr: StopArrival;
+  allArrivals: StopArrival[];
   stop: BusStop;
+  userLat?: number | null;
+  userLon?: number | null;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
   onLocateBus?: (arrival: StopArrival) => void;
 }
 
-const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, onStartOnboard, onLocateBus }) => {
+const ArrivalItem: React.FC<ArrivalItemProps> = ({
+  arr,
+  allArrivals,
+  stop,
+  userLat,
+  userLon,
+  onShareArrival,
+  onStartOnboard,
+  onLocateBus,
+}) => {
   const isArriving = arr.minutesRemaining <= 0;
   const fleet = getBusFleetInfo(arr.vehicleId);
   const occupancy = parseOccupancy(arr.occupancy);
+  const radar = calculateWalkingRadar(
+    userLat ?? null,
+    userLon ?? null,
+    stop.lat,
+    stop.lon,
+    arr,
+    allArrivals
+  );
 
   return (
     <div
@@ -52,7 +76,7 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
             <span className="font-bold text-slate-900 dark:text-white text-sm sm:text-base block truncate group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
               {arr.destination || `Línea ${arr.routeShortName}`}
             </span>
-            <div className="flex items-center gap-2 mt-0.5 text-xs">
+            <div className="flex items-center gap-2 mt-0.5 text-xs flex-wrap">
               {arr.isRealtime ? (
                 <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold truncate">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
@@ -67,6 +91,20 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
                 <span className="text-amber-600 dark:text-amber-400/90 flex items-center gap-1 font-medium truncate">
                   <Clock className="w-3 h-3 shrink-0" />
                   <span>Programado ({arr.exactTime})</span>
+                </span>
+              )}
+
+              {/* Radar '¿Llego a tiempo a pie?' badge */}
+              {radar && (
+                <span
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold text-[10px] border max-w-full truncate ${radar.badgeClass}`}
+                  title={radar.subLabel}
+                >
+                  {radar.status === 'relaxed' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
+                  {radar.status === 'tight' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />}
+                  {radar.status === 'missed' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
+                  {radar.status === 'at_stop' && <Footprints className="w-2.5 h-2.5 text-teal-600 dark:text-teal-400 shrink-0" />}
+                  <span className="truncate">{radar.label}</span>
                 </span>
               )}
             </div>
@@ -250,6 +288,9 @@ interface StopArrivalsListContentProps {
   onlyRealtime: boolean;
   displayedArrivals: StopArrival[];
   stop: BusStop;
+  userLat?: number | null;
+  userLon?: number | null;
+  onRequestLocation?: () => void;
   onShowScheduled: () => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
@@ -263,6 +304,9 @@ const StopArrivalsListContent: React.FC<StopArrivalsListContentProps> = ({
   onlyRealtime,
   displayedArrivals,
   stop,
+  userLat,
+  userLon,
+  onRequestLocation,
   onShowScheduled,
   onShareArrival,
   onStartOnboard,
@@ -299,13 +343,28 @@ const StopArrivalsListContent: React.FC<StopArrivalsListContentProps> = ({
 
   return (
     <div className="space-y-2.5">
+      {/* Prompt to enable location if missing */}
+      {!userLat && onRequestLocation && (
+        <button
+          type="button"
+          onClick={onRequestLocation}
+          className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-teal-200/80 dark:border-slate-700 text-teal-700 dark:text-teal-300 text-xs font-bold transition-colors cursor-pointer shadow-2xs mb-1"
+        >
+          <Footprints className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+          <span>Activar GPS para calcular si llegas a tiempo a pie</span>
+        </button>
+      )}
+
       {displayedArrivals.map(arr => {
         const uniqueKey = `${arr.routeShortName}_${arr.timestamp}_${arr.exactTime}_${arr.isRealtime ? 'rt' : 'sc'}`;
         return (
           <ArrivalItem
             key={uniqueKey}
             arr={arr}
+            allArrivals={data?.arrivals || []}
             stop={stop}
+            userLat={userLat}
+            userLon={userLon}
             onShareArrival={onShareArrival}
             onStartOnboard={onStartOnboard}
             onLocateBus={onLocateBus}
@@ -322,6 +381,9 @@ interface StopArrivalsBodyProps {
   error: string | null;
   refresh: () => void;
   stop: BusStop;
+  userLat?: number | null;
+  userLon?: number | null;
+  onRequestLocation?: () => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
   onLocateBus?: (arrival: StopArrival) => void;
@@ -333,6 +395,9 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
   error,
   refresh,
   stop,
+  userLat,
+  userLon,
+  onRequestLocation,
   onShareArrival,
   onStartOnboard,
   onLocateBus,
@@ -396,6 +461,9 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
         onlyRealtime={onlyRealtime}
         displayedArrivals={displayedArrivals}
         stop={stop}
+        userLat={userLat}
+        userLon={userLon}
+        onRequestLocation={onRequestLocation}
         onShowScheduled={() => updateRealtimeFilter(false)}
         onShareArrival={onShareArrival}
         onStartOnboard={onStartOnboard}
@@ -415,6 +483,9 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
   onShareArrival,
   onStartOnboard,
   onLocateBus,
+  userLat,
+  userLon,
+  onRequestLocation,
 }) => {
   const { data, loading, error, refresh } = useStopArrivals(stop?.code || null);
   const [expandedStopCode, setExpandedStopCode] = useState<string | null>(null);
@@ -519,6 +590,9 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
           error={error}
           refresh={refresh}
           stop={stop}
+          userLat={userLat}
+          userLon={userLon}
+          onRequestLocation={onRequestLocation}
           onShareArrival={onShareArrival}
           onStartOnboard={onStartOnboard}
           onLocateBus={onLocateBus}

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle, ChevronDown, Bus, MapPin, Minimize2, Maximize2 } from 'lucide-react';
+import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle, ChevronDown, Bus, MapPin, Minimize2, Maximize2, Footprints } from 'lucide-react';
 import type { BusStop, StopArrival } from '../../types/bus.ts';
 import { useStopArrivals } from '../../hooks/useStopArrivals.ts';
 import { getBusFleetInfo } from '../../utils/fleet.ts';
+import { calculateWalkingRadar } from '../../utils/walkingRadar.ts';
 import { BusDrawing } from '../BusDrawing.tsx';
 
 interface MapStopArrivalsCardProps {
@@ -14,11 +15,17 @@ interface MapStopArrivalsCardProps {
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
   onLocateBus?: (arrival: StopArrival) => void;
+  userLat?: number | null;
+  userLon?: number | null;
+  onRequestLocation?: () => void;
 }
 
 interface MapArrivalRowProps {
   arr: StopArrival;
+  allArrivals: StopArrival[];
   stop: BusStop;
+  userLat?: number | null;
+  userLon?: number | null;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
   onLocateBus?: (arrival: StopArrival) => void;
@@ -26,13 +33,24 @@ interface MapArrivalRowProps {
 
 const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
   arr,
+  allArrivals,
   stop,
+  userLat,
+  userLon,
   onShareArrival,
   onStartOnboard,
   onLocateBus,
 }) => {
   const isArriving = arr.minutesRemaining <= 0;
   const fleet = getBusFleetInfo(arr.vehicleId);
+  const radar = calculateWalkingRadar(
+    userLat ?? null,
+    userLon ?? null,
+    stop.lat,
+    stop.lon,
+    arr,
+    allArrivals
+  );
 
   return (
     <div
@@ -55,7 +73,7 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
           <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white block truncate group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
             {arr.destination || `Línea ${arr.routeShortName}`}
           </span>
-          <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+          <div className="flex items-center gap-1.5 mt-0.5 text-[10px] flex-wrap">
             {arr.isRealtime ? (
               <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold truncate">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
@@ -65,6 +83,20 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
               <span className="text-amber-600 dark:text-amber-400/90 flex items-center gap-1 font-medium truncate">
                 <Clock className="w-2.5 h-2.5 shrink-0" />
                 <span>Horario ({arr.exactTime})</span>
+              </span>
+            )}
+
+            {/* Radar '¿Llego a tiempo a pie?' badge */}
+            {radar && (
+              <span
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold text-[9px] border max-w-full truncate ${radar.badgeClass}`}
+                title={radar.subLabel}
+              >
+                {radar.status === 'relaxed' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
+                {radar.status === 'tight' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />}
+                {radar.status === 'missed' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
+                {radar.status === 'at_stop' && <Footprints className="w-2.5 h-2.5 text-teal-600 dark:text-teal-400 shrink-0" />}
+                <span className="truncate">{radar.label}</span>
               </span>
             )}
           </div>
@@ -307,6 +339,9 @@ interface MapStopCardBodyProps {
   loading: boolean;
   error: string | null;
   stop: BusStop;
+  userLat?: number | null;
+  userLon?: number | null;
+  onRequestLocation?: () => void;
   onRefresh: () => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
@@ -318,6 +353,9 @@ const MapStopCardBody: React.FC<MapStopCardBodyProps> = ({
   loading,
   error,
   stop,
+  userLat,
+  userLon,
+  onRequestLocation,
   onRefresh,
   onShareArrival,
   onStartOnboard,
@@ -373,6 +411,18 @@ const MapStopCardBody: React.FC<MapStopCardBodyProps> = ({
 
   return (
     <div className="p-3 sm:p-3.5 overflow-y-auto flex-1 space-y-2">
+      {/* Prompt to enable location if missing */}
+      {!userLat && onRequestLocation && (
+        <button
+          type="button"
+          onClick={onRequestLocation}
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-teal-200/80 dark:border-slate-700 text-teal-700 dark:text-teal-300 text-[11px] font-bold transition-colors cursor-pointer shadow-2xs"
+        >
+          <Footprints className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+          <span>Activar GPS para calcular si llegas a pie</span>
+        </button>
+      )}
+
       {data && data.arrivals.length > 0 && (
         <div className="space-y-1.5">
           {data.arrivals.map(arr => {
@@ -381,7 +431,10 @@ const MapStopCardBody: React.FC<MapStopCardBodyProps> = ({
               <MapArrivalRow
                 key={uniqueKey}
                 arr={arr}
+                allArrivals={data.arrivals}
                 stop={stop}
+                userLat={userLat}
+                userLon={userLon}
                 onShareArrival={onShareArrival}
                 onStartOnboard={onStartOnboard}
                 onLocateBus={onLocateBus}
@@ -403,6 +456,9 @@ export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
   onShareArrival,
   onStartOnboard,
   onLocateBus,
+  userLat,
+  userLon,
+  onRequestLocation,
 }) => {
   const { data, loading, error, refresh } = useStopArrivals(stop.code);
   const [expandedStopCode, setExpandedStopCode] = useState<string | null>(null);
@@ -431,6 +487,9 @@ export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
           loading={loading}
           error={error}
           stop={stop}
+          userLat={userLat}
+          userLon={userLon}
+          onRequestLocation={onRequestLocation}
           onRefresh={refresh}
           onShareArrival={onShareArrival}
           onStartOnboard={onStartOnboard}
