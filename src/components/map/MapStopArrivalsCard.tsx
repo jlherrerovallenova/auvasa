@@ -89,14 +89,14 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
             {/* Radar '¿Llego a tiempo a pie?' badge */}
             {radar && (
               <span
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold text-[9px] border max-w-full truncate ${radar.badgeClass}`}
-                title={radar.subLabel}
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold text-[9px] border shrink-0 ${radar.badgeClass}`}
+                title={`${radar.label} • ${radar.subLabel}`}
               >
                 {radar.status === 'relaxed' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
                 {radar.status === 'tight' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />}
                 {radar.status === 'missed' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
                 {radar.status === 'at_stop' && <Footprints className="w-2.5 h-2.5 text-teal-600 dark:text-teal-400 shrink-0" />}
-                <span className="truncate">{radar.label}</span>
+                <span>{radar.shortLabel}</span>
               </span>
             )}
           </div>
@@ -279,7 +279,7 @@ const MapStopCardHeader: React.FC<MapStopCardHeaderProps> = ({
           #{stop.code}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white leading-tight truncate">
+          <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight line-clamp-2">
             {stop.name}
           </h3>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">

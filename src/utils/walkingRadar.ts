@@ -10,6 +10,7 @@ export interface WalkingRadarResult {
   status: WalkingCatchStatus;
   marginMinutes: number;
   label: string;
+  shortLabel: string;
   subLabel: string;
   badgeClass: string;
   nextBusMinutes?: number | null;
@@ -46,6 +47,7 @@ export function calculateWalkingRadar(
       status: 'at_stop',
       marginMinutes: arrival.minutesRemaining,
       label: 'Ya estás en la marquesina',
+      shortLabel: 'En marquesina',
       subLabel: `${directDistance}m`,
       badgeClass: 'bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30',
     };
@@ -68,6 +70,7 @@ export function calculateWalkingRadar(
       status: 'relaxed',
       marginMinutes,
       label: `Llegas con calma (+${marginMinutes} min de margen)`,
+      shortLabel: `Llegas (+${marginMinutes}m)`,
       subLabel: `${walkingMinutes} min a pie (${walkingDistance}m)`,
       badgeClass: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
       nextBusMinutes,
@@ -83,6 +86,7 @@ export function calculateWalkingRadar(
       status: 'tight',
       marginMinutes,
       label: marginMinutes < 0 ? 'Apura el paso (llegas muy justo)' : 'Paso ligero (llegas a tiempo)',
+      shortLabel: marginMinutes < 0 ? 'Apura el paso' : 'Paso ligero',
       subLabel: `${walkingMinutes} min a pie (${walkingDistance}m)`,
       badgeClass: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 animate-pulse',
       nextBusMinutes,
@@ -102,6 +106,7 @@ export function calculateWalkingRadar(
     status: 'missed',
     marginMinutes,
     label,
+    shortLabel: nextBusMinutes !== null ? `No llegas (sig. ${nextBusMinutes}m)` : 'No llegas',
     subLabel: `${walkingMinutes} min a pie (${walkingDistance}m)`,
     badgeClass: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30',
     nextBusMinutes,

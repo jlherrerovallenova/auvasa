@@ -57,12 +57,13 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
   return (
     <div
       onClick={() => onLocateBus?.(arr)}
-      className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 hover:bg-teal-50/40 dark:hover:bg-slate-800 border border-slate-200 hover:border-teal-400/60 dark:border-slate-700/70 dark:hover:border-teal-500/50 transition-colors space-y-2.5 shadow-sm dark:shadow-md cursor-pointer group"
-      title="Pulsa para ver la ubicación de este autobús en el mapa"
+      className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-850 hover:bg-teal-50/40 dark:hover:bg-slate-800 border border-slate-200/90 hover:border-teal-400/80 dark:border-slate-750 dark:hover:border-teal-500/60 transition-colors shadow-2xs space-y-2 cursor-pointer group"
+      title="Toca para ver este autobús en el mapa"
     >
-      <div className="flex items-center justify-between gap-2.5">
-        {/* Left: Bus illustration and Destination */}
-        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+      {/* 1. Main Row: Line Badge, Destination & Time */}
+      <div className="flex items-start justify-between gap-2.5">
+        {/* Left: Line drawing + Destination */}
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
           <BusDrawing
             fleet={fleet}
             lineName={arr.routeShortName}
@@ -70,41 +71,43 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
             routeTextColor={arr.routeTextColor}
             vehicleId={arr.vehicleId}
             size="sm"
-            className="shrink-0 drop-shadow-sm transition-transform group-hover:scale-105"
+            className="shrink-0 drop-shadow-2xs transition-transform group-hover:scale-105 mt-0.5"
           />
           <div className="min-w-0 flex-1">
-            <span className="font-bold text-slate-900 dark:text-white text-sm sm:text-base block truncate group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
+            <span className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-tight block truncate group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
               {arr.destination || `Línea ${arr.routeShortName}`}
             </span>
-            <div className="flex items-center gap-2 mt-0.5 text-xs flex-wrap">
+
+            {/* Badges row: GPS status + Walking radar (shortLabel, clean and readable) */}
+            <div className="flex items-center gap-1.5 mt-1 text-[11px] flex-wrap">
               {arr.isRealtime ? (
-                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold truncate">
+                <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                   <span>GPS Real</span>
                   {arr.licensePlate && (
-                    <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px] ml-1 shrink-0">
-                      ({arr.licensePlate})
+                    <span className="text-slate-400 dark:text-slate-500 font-mono text-[10px]">
+                      {arr.licensePlate}
                     </span>
                   )}
                 </span>
               ) : (
-                <span className="text-amber-600 dark:text-amber-400/90 flex items-center gap-1 font-medium truncate">
+                <span className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
                   <Clock className="w-3 h-3 shrink-0" />
-                  <span>Programado ({arr.exactTime})</span>
+                  <span>Teórico</span>
                 </span>
               )}
 
-              {/* Radar '¿Llego a tiempo a pie?' badge */}
+              {/* Walking Radar Badge with shortLabel */}
               {radar && (
                 <span
-                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold text-[10px] border max-w-full truncate ${radar.badgeClass}`}
-                  title={radar.subLabel}
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold text-[10px] border shrink-0 ${radar.badgeClass}`}
+                  title={`${radar.label} • ${radar.subLabel}`}
                 >
                   {radar.status === 'relaxed' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
                   {radar.status === 'tight' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />}
                   {radar.status === 'missed' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
                   {radar.status === 'at_stop' && <Footprints className="w-2.5 h-2.5 text-teal-600 dark:text-teal-400 shrink-0" />}
-                  <span className="truncate">{radar.label}</span>
+                  <span>{radar.shortLabel}</span>
                 </span>
               )}
             </div>
@@ -114,7 +117,7 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
         {/* Right: Arrival Time Badge */}
         <div className="text-right shrink-0">
           <div
-            className={`inline-flex items-center px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-sm ${
+            className={`inline-flex items-center px-2.5 py-1 rounded-xl font-black text-xs sm:text-sm shadow-2xs ${
               isArriving
                 ? 'bg-emerald-500 text-slate-950 animate-pulse font-extrabold'
                 : arr.isRealtime
@@ -124,45 +127,54 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
           >
             {isArriving ? 'Llegando' : `${arr.minutesRemaining} min`}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1 font-mono">
+          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
             Hora: {arr.exactTime}
           </div>
         </div>
       </div>
 
-      {/* Fleet and Occupancy Radar Badges */}
-      {arr.isRealtime && (
-        <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-200/80 dark:border-slate-750/70 text-[10px]">
-          <span className={`px-2 py-0.5 rounded-md font-medium border ${occupancy.bgClass} ${occupancy.colorClass}`}>
-            {occupancy.label}
-          </span>
+      {/* 2. Secondary Row: Attributes & Compact Actions */}
+      <div
+        className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Left: Compact vehicle attributes */}
+        <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 min-w-0 flex-1 overflow-hidden">
+          {arr.isRealtime && occupancy.label !== 'Aforo no disponible' && (
+            <span className={`px-1.5 py-0.5 rounded font-medium border truncate ${occupancy.bgClass} ${occupancy.colorClass}`}>
+              {occupancy.label}
+            </span>
+          )}
 
-          <span className="px-2 py-0.5 rounded-md font-medium bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-750 flex items-center gap-1">
-            {fleet.propulsion === '100% Eléctrico' && <Zap className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />}
-            <span>{fleet.model}</span>
-          </span>
+          {fleet.propulsion === '100% Eléctrico' ? (
+            <span className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center gap-0.5 shrink-0 font-medium">
+              <Zap className="w-2.5 h-2.5 text-emerald-500" />
+              <span>Eléctrico</span>
+            </span>
+          ) : fleet.model ? (
+            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 truncate hidden xs:inline-block">
+              {fleet.model}
+            </span>
+          ) : null}
 
           {fleet.hasPMR && (
-            <span className="px-1.5 py-0.5 rounded-md bg-sky-50 dark:bg-slate-900 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-slate-750 flex items-center gap-0.5" title="Rampa accesible para movilidad reducida">
-              <Accessibility className="w-3 h-3" />
-              <span>PMR</span>
+            <span className="px-1 py-0.5 rounded bg-sky-50 dark:bg-slate-900 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-slate-800 flex items-center shrink-0" title="Accesible PMR">
+              <Accessibility className="w-2.5 h-2.5" />
             </span>
           )}
         </div>
-      )}
 
-      {/* Action Row: Locate on Map, Onboard Mode & Share */}
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-750/70" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Right: Actions (Mapa, Subir, Compartir) */}
+        <div className="flex items-center gap-1 shrink-0">
           {onLocateBus && (
             <button
               type="button"
               onClick={() => onLocateBus(arr)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/50 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-xs font-bold transition-colors cursor-pointer shadow-2xs active:scale-95"
-              title="Ver ubicación de este autobús en el mapa"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/50 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800 text-[11px] font-bold transition-colors cursor-pointer active:scale-95 shadow-2xs"
+              title="Ver autobús en el mapa"
             >
-              <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-              <span>Ver en mapa</span>
+              <MapPin className="w-3 h-3 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span>Mapa</span>
             </button>
           )}
 
@@ -170,26 +182,26 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
             <button
               type="button"
               onClick={() => onStartOnboard(stop, arr)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-sm transition-colors transform active:scale-95 cursor-pointer"
-              title="Activar avisos y copiloto a bordo"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-[11px] shadow-2xs transition-colors active:scale-95 cursor-pointer"
+              title="Subirme a este bus (Copiloto a bordo)"
             >
-              <Bus className="w-3.5 h-3.5" />
-              <span>Subirme</span>
+              <Bus className="w-3 h-3 shrink-0" />
+              <span>Subir</span>
+            </button>
+          )}
+
+          {onShareArrival && (
+            <button
+              type="button"
+              onClick={() => onShareArrival(stop, arr)}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Compartir hora de llegada"
+              aria-label="Compartir llegada"
+            >
+              <Share2 className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
-
-        {onShareArrival && (
-          <button
-            type="button"
-            onClick={() => onShareArrival(stop, arr)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-750 text-xs font-semibold transition-colors cursor-pointer"
-            title="Compartir hora de llegada"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>Compartir</span>
-          </button>
-        )}
       </div>
     </div>
   );
@@ -208,29 +220,29 @@ const RealtimeFilterTabs: React.FC<RealtimeFilterTabsProps> = ({
   realTimeCount,
   totalCount,
 }) => (
-  <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-xs">
+  <div className="flex items-center gap-1 p-0.5 sm:p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-xs">
     <button
       type="button"
       onClick={() => onToggle(true)}
-      className={`flex-1 py-1.5 px-2.5 rounded-lg font-medium transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 ${
+      className={`flex-1 py-1.5 px-2 rounded-lg font-medium transition-colors cursor-pointer text-center flex items-center justify-center gap-1 text-[11px] sm:text-xs ${
         onlyRealtime
-          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-xs font-bold'
+          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-2xs font-bold'
           : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
       }`}
     >
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-      <span>Solo GPS Real ({realTimeCount})</span>
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+      <span>Solo GPS ({realTimeCount})</span>
     </button>
     <button
       type="button"
       onClick={() => onToggle(false)}
-      className={`flex-1 py-1.5 px-2.5 rounded-lg font-medium transition-colors cursor-pointer text-center ${
+      className={`flex-1 py-1.5 px-2 rounded-lg font-medium transition-colors cursor-pointer text-center text-[11px] sm:text-xs ${
         !onlyRealtime
-          ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold'
+          ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs font-bold'
           : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
       }`}
     >
-      <span>Todos con teóricos ({totalCount})</span>
+      <span>Todos ({totalCount})</span>
     </button>
   </div>
 );
@@ -506,17 +518,17 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
     >
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[88dvh] flex flex-col shadow-2xl overflow-hidden transition-colors">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/90 relative">
-          <div className="flex items-start justify-between gap-2.5 sm:gap-3">
-            <div className="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <span className="bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/30 font-mono font-black text-sm px-2.5 py-1 rounded-xl shrink-0 mt-0.5">
+        <div className="p-3.5 sm:p-5 border-b border-slate-200 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/90 relative">
+          <div className="flex items-start justify-between gap-2 sm:gap-3">
+            <div className="flex items-start gap-2 sm:gap-2.5 min-w-0 flex-1">
+              <span className="bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/30 font-mono font-black text-xs sm:text-sm px-2 py-0.5 rounded-lg shrink-0 mt-0.5">
                 #{stop.code}
               </span>
               <div className="min-w-0 flex-1">
-                <h3 id="stop-modal-title" className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug truncate">
+                <h3 id="stop-modal-title" className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white leading-tight line-clamp-2">
                   {stop.name}
                 </h3>
-                <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
                   <span>AUVASA Valladolid</span>
                   <span>•</span>
                   <span>{stop.routes.length} líneas</span>
@@ -524,38 +536,38 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 type="button"
                 onClick={() => onToggleFavorite(stop.code)}
-                className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                className={`p-1.5 sm:p-2 rounded-xl border transition-colors cursor-pointer ${
                   isFavorite
                     ? 'bg-amber-500/10 border-amber-500/40 text-amber-500 dark:text-amber-400'
                     : 'bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
                 aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
               >
-                <Star className={`w-5 h-5 ${isFavorite ? 'fill-amber-400' : ''}`} />
+                <Star className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorite ? 'fill-amber-400' : ''}`} />
               </button>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="p-1.5 sm:p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                 aria-label="Cerrar ventana"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
 
           {/* Collapsible passing lines */}
           {stop.routes && stop.routes.length > 0 && (
-            <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800/60">
+            <div className="mt-2.5 pt-2 border-t border-slate-200 dark:border-slate-800/60">
               <button
                 type="button"
                 onClick={toggleRoutes}
-                className="flex items-center justify-between w-full py-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer group"
+                className="flex items-center justify-between w-full py-0.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer group"
                 aria-expanded={showRoutes}
               >
                 <div className="flex items-center gap-1.5">
@@ -568,11 +580,11 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
               </button>
 
               {showRoutes && (
-                <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-dashed border-slate-200 dark:border-slate-800/60 max-h-36 overflow-y-auto">
+                <div className="flex flex-wrap gap-1 mt-2 pt-1.5 border-t border-dashed border-slate-200 dark:border-slate-800/60 max-h-32 overflow-y-auto">
                   {stop.routes.map(r => (
                     <span
                       key={r}
-                      className="text-xs font-black px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-slate-200 dark:border-slate-700"
+                      className="text-[11px] font-black px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-slate-200 dark:border-slate-700"
                     >
                       {r}
                     </span>
@@ -599,7 +611,7 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
         />
 
         {/* Modal Footer */}
-        <div className="p-3.5 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/95 dark:bg-slate-900/95 flex items-center justify-between gap-2 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
+        <div className="p-3 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/95 dark:bg-slate-900/95 flex items-center justify-between gap-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
           {onSetAlarm && (
             <button
               type="button"
@@ -607,21 +619,20 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
                 onSetAlarm(stop);
                 onClose();
               }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-750 text-teal-700 dark:text-teal-300 text-xs font-bold transition-colors border border-slate-300 dark:border-slate-700 cursor-pointer shrink-0"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors border border-slate-200 dark:border-slate-700 shadow-2xs cursor-pointer shrink-0 active:scale-95"
             >
               <Bell className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-              <span className="hidden xs:inline sm:inline">Avisarme al llegar</span>
-              <span className="xs:hidden sm:hidden">Avisar</span>
+              <span>Avisar al llegar</span>
             </button>
           )}
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 flex-1 justify-end">
             <button
               type="button"
               onClick={() => {
                 onViewOnMap(stop);
               }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors shadow-md shadow-teal-700/30 cursor-pointer shrink-0"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors shadow-sm shadow-teal-700/20 cursor-pointer active:scale-95"
             >
               <MapPin className="w-3.5 h-3.5 shrink-0" />
               <span>Ver en el Mapa</span>
