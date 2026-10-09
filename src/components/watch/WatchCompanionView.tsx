@@ -12,6 +12,46 @@ interface WatchArrivalRowProps {
   userLon: number | null;
 }
 
+const WATCH_RADAR_CONFIG = {
+  relaxed: { cls: 'text-emerald-400 bg-emerald-950/60', text: '🟢 Llegas' },
+  tight: { cls: 'text-amber-400 bg-amber-950/60 animate-pulse', text: '🟡 Apura' },
+  at_stop: { cls: 'text-teal-400 bg-teal-950/60', text: '📍 En parada' },
+  missed: { cls: 'text-rose-400 bg-rose-950/60', text: '🔴 No llegas' },
+} as const;
+
+const WatchRadarBadge: React.FC<{ status: 'relaxed' | 'tight' | 'missed' | 'at_stop' }> = ({ status }) => {
+  const cfg = WATCH_RADAR_CONFIG[status] || WATCH_RADAR_CONFIG.missed;
+  return (
+    <span className={`text-[8px] font-bold px-1 rounded ${cfg.cls}`}>
+      {cfg.text}
+    </span>
+  );
+};
+
+const WatchEtaBadge: React.FC<{
+  isArriving: boolean;
+  isRealtime: boolean;
+  minutesRemaining: number;
+}> = ({ isArriving, isRealtime, minutesRemaining }) => {
+  if (isArriving) {
+    return (
+      <div className="px-2 py-1 rounded-xl font-black text-xs bg-emerald-500 text-black animate-pulse">
+        LLEGANDO
+      </div>
+    );
+  }
+
+  const cls = isRealtime
+    ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/30'
+    : 'bg-amber-950/70 text-amber-300 border-amber-500/30';
+
+  return (
+    <div className={`px-2 py-1 rounded-xl font-black text-xs border ${cls}`}>
+      {minutesRemaining}m
+    </div>
+  );
+};
+
 const WatchArrivalRow: React.FC<WatchArrivalRowProps> = ({
   arr,
   allArrivals,
@@ -49,41 +89,18 @@ const WatchArrivalRow: React.FC<WatchArrivalRowProps> = ({
                 {arr.exactTime}
               </span>
             )}
-            {radar && (
-              <span
-                className={`text-[8px] font-bold px-1 rounded ${
-                  radar.status === 'relaxed'
-                    ? 'text-emerald-400 bg-emerald-950/60'
-                    : radar.status === 'tight'
-                    ? 'text-amber-400 bg-amber-950/60 animate-pulse'
-                    : radar.status === 'at_stop'
-                    ? 'text-teal-400 bg-teal-950/60'
-                    : 'text-rose-400 bg-rose-950/60'
-                }`}
-              >
-                {radar.status === 'relaxed' && '🟢 Llegas'}
-                {radar.status === 'tight' && '🟡 Apura'}
-                {radar.status === 'missed' && '🔴 No llegas'}
-                {radar.status === 'at_stop' && '📍 En parada'}
-              </span>
-            )}
+            {radar && <WatchRadarBadge status={radar.status} />}
           </div>
         </div>
       </div>
 
       {/* Right: ETA Badge */}
       <div className="text-right shrink-0">
-        <div
-          className={`px-2 py-1 rounded-xl font-black text-xs ${
-            isArriving
-              ? 'bg-emerald-500 text-black font-black animate-pulse'
-              : arr.isRealtime
-              ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/30'
-              : 'bg-amber-950/70 text-amber-300 border border-amber-500/30'
-          }`}
-        >
-          {isArriving ? 'LLEGANDO' : `${arr.minutesRemaining}m`}
-        </div>
+        <WatchEtaBadge
+          isArriving={isArriving}
+          isRealtime={arr.isRealtime}
+          minutesRemaining={arr.minutesRemaining}
+        />
       </div>
     </div>
   );

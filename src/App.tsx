@@ -1,14 +1,10 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Header, type ActiveTab } from './components/Header.tsx';
+import React, { useState, useCallback } from 'react';
+import { Header } from './components/Header.tsx';
 import { AppTabContent } from './components/AppTabContent.tsx';
 import { DestinationAlarmBanner } from './components/DestinationAlarmBanner.tsx';
 import { SharedArrivalBanner } from './components/SharedArrivalBanner.tsx';
-import { StopArrivalsModal } from './components/StopArrivalsModal.tsx';
-import { OnboardSetupModal } from './components/onboard/OnboardSetupModal.tsx';
-import { OnboardDashboardModal } from './components/onboard/OnboardDashboardModal.tsx';
-import { OnboardMiniBar } from './components/onboard/OnboardMiniBar.tsx';
+import { AppModals } from './components/AppModals.tsx';
 import { WatchCompanionView } from './components/watch/WatchCompanionView.tsx';
-import { WatchShareModal } from './components/watch/WatchShareModal.tsx';
 import { useStops } from './hooks/useStops.ts';
 import { useRoutes } from './hooks/useRoutes.ts';
 import { useRealtime } from './hooks/useRealtime.ts';
@@ -18,7 +14,8 @@ import { useDestinationAlarm } from './hooks/useDestinationAlarm.ts';
 import { useAlerts } from './hooks/useAlerts.ts';
 import { useTheme } from './hooks/useTheme.ts';
 import { useOnboardTrip } from './hooks/useOnboardTrip.ts';
-import type { BusStop, BusRoute, StopArrival, LiveVehicle } from './types/bus.ts';
+import { useAppNavigation } from './hooks/useAppNavigation.ts';
+import type { BusStop, StopArrival } from './types/bus.ts';
 
 export const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -32,22 +29,6 @@ export const App: React.FC = () => {
     }
   });
   const [isWatchShareModalOpen, setIsWatchShareModalOpen] = useState(false);
-
-  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const t = params.get('tab') as ActiveTab;
-      if (t && ['search', 'routes', 'lines', 'map', 'marquesina', 'favorites', 'alerts'].includes(t)) {
-        return t;
-      }
-    } catch {
-      // ignore
-    }
-    return 'search';
-  });
-  const [selectedStop, setSelectedStop] = useState<BusStop | null>(null);
-  const [selectedRoute, setSelectedRoute] = useState<BusRoute | null>(null);
-  const [focusedVehicle, setFocusedVehicle] = useState<LiveVehicle | null>(null);
 
   // Custom Hooks
   const { stops, stopMapByCode } = useStops();
@@ -97,7 +78,7 @@ export const App: React.FC = () => {
   } = useOnboardTrip(vehicles);
 
   const [onboardSetup, setOnboardSetup] = useState<{
-    route: BusRoute;
+    route: Parameters<typeof startTrip>[0]['route'];
     originStop: BusStop;
     vehicleId?: string | null;
   } | null>(null);
@@ -115,6 +96,32 @@ export const App: React.FC = () => {
     },
     [routeMapById]
   );
+
+  const {
+    activeTab,
+    selectedStop,
+    setSelectedStop,
+    selectedRoute,
+    setSelectedRoute,
+    focusedVehicle,
+    nearbyStops,
+    popularLines,
+    handleSelectStop,
+    handleCloseStopModal,
+    handleSelectRouteFromSearch,
+    handleSelectRouteForMap,
+    handleViewStopOnMap,
+    handleLocateBus,
+    handleTabChange,
+  } = useAppNavigation({
+    stops,
+    routes,
+    routeMapById,
+    stopMapByCode,
+    vehicles,
+    fetchRouteDetail,
+    getNearbyStops,
+  });
 
   // Shared arrival URL payload (?share=1&line=...&stop=...&eta=...)
   const [sharedArrivalBanner, setSharedArrivalBanner] = useState<{ line: string; stop: string; eta: string } | null>(() => {
@@ -139,100 +146,7 @@ export const App: React.FC = () => {
     if (s) {
       setSelectedStop(s);
     }
-  }, [sharedArrivalBanner, stopMapByCode]);
-
-  // Support ?stop=CODE URL parameter (e.g. ?tab=map&stop=1002)
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const stopCode = params.get('stop');
-      if (stopCode && stopMapByCode.size > 0 && !selectedStop) {
-        const s = stopMapByCode.get(stopCode);
-        if (s) {
-          setSelectedStop(s);
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, [stopMapByCode, selectedStop]);
-
-  const nearbyStops = useMemo(() => {
-    return getNearbyStops(stops, 1500, 6);
-  }, [getNearbyStops, stops]);
-
-  const handleSelectStop = useCallback((stop: BusStop) => {
-    setSelectedStop(stop);
-  }, []);
-
-  const handleCloseStopModal = useCallback(() => {
-    setSelectedStop(null);
-  }, []);
-
-  const handleSelectRouteFromSearch = useCallback(async (route: BusRoute) => {
-    const detailed = await fetchRouteDetail(route.id);
-    setSelectedRoute(detailed || route);
-    setActiveTab('lines');
-  }, [fetchRouteDetail]);
-
-  const handleSelectRouteForMap = useCallback(async (route: BusRoute) => {
-    const detailed = await fetchRouteDetail(route.id);
-    setSelectedRoute(detailed || route);
-    setActiveTab('map');
-  }, [fetchRouteDetail]);
-
-  const handleViewStopOnMap = useCallback((stop: BusStop) => {
-    setSelectedStop(stop);
-    setActiveTab('map');
-  }, []);
-
-  const handleLocateBus = useCallback(
-    (arr: StopArrival) => {
-      // 1. Try to find the exact live GPS vehicle
-      let found = vehicles.find(
-        v => arr.vehicleId && (v.vehicleId === arr.vehicleId || v.id === arr.vehicleId)
-      );
-
-      // 2. Fallback: find any live vehicle active on this line
-      if (!found && arr.routeShortName) {
-        const lineBuses = vehicles.filter(
-          v => v.lineName.toUpperCase() === arr.routeShortName.toUpperCase() || v.routeId === arr.routeShortName
-        );
-        if (lineBuses.length > 0) {
-          found = lineBuses[0];
-        }
-      }
-
-      if (found && found.lat && found.lon) {
-        setFocusedVehicle(found);
-        setActiveTab('map');
-      } else {
-        // Scheduled bus without active GPS yet: highlight line route on map
-        const route =
-          routeMapById.get(arr.routeShortName) ||
-          routes.find(r => r.shortName.toUpperCase() === arr.routeShortName.toUpperCase());
-        if (route) {
-          handleSelectRouteForMap(route);
-        } else {
-          setActiveTab('map');
-        }
-      }
-    },
-    [vehicles, routes, routeMapById, handleSelectRouteForMap]
-  );
-
-  const handleTabChange = useCallback((tab: ActiveTab) => {
-    setActiveTab(tab);
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  }, []);
-
-  // Quick popular lines for Valladolid
-  const popularLines = useMemo(() => {
-    const popularKeys = ['1', '2', '7', '9', '18', '19'];
-    return popularKeys
-      .map(key => routes.find(r => r.shortName === key))
-      .filter((r): r is BusRoute => Boolean(r));
-  }, [routes]);
+  }, [sharedArrivalBanner, stopMapByCode, setSelectedStop]);
 
   if (isWatchMode) {
     return (
@@ -259,7 +173,6 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-[100dvh] bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-8 selection:bg-teal-500 selection:text-white transition-colors">
-      {/* Top Navbar */}
       <Header
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -272,7 +185,6 @@ export const App: React.FC = () => {
         onOpenWatchModal={() => setIsWatchShareModalOpen(true)}
       />
 
-      {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-6">
         <DestinationAlarmBanner
           targetStop={alarmTargetStop}
@@ -322,61 +234,36 @@ export const App: React.FC = () => {
         />
       </main>
 
-      {/* Stop Arrivals Modal (Shown when outside map tab; in map tab, the in-map card is used) */}
-      <StopArrivalsModal
-        stop={activeTab !== 'map' ? selectedStop : null}
-        onClose={handleCloseStopModal}
-        isFavorite={selectedStop ? isFavoriteStop(selectedStop.code) : false}
-        onToggleFavorite={toggleFavoriteStop}
-        onViewOnMap={handleViewStopOnMap}
+      <AppModals
+        activeTab={activeTab}
+        selectedStop={selectedStop}
+        onCloseStopModal={handleCloseStopModal}
+        isFavoriteStop={isFavoriteStop}
+        onToggleFavoriteStop={toggleFavoriteStop}
+        onViewStopOnMap={handleViewStopOnMap}
         onSetAlarm={setAlarmForStop}
-        onStartOnboard={handleStartOnboardFromArrival}
+        onStartOnboardFromArrival={handleStartOnboardFromArrival}
         onLocateBus={handleLocateBus}
         userLat={userLat}
         userLon={userLon}
         onRequestLocation={requestLocation}
-      />
-
-      {/* Onboard Setup Modal (Choose destination stop when boarding) */}
-      {onboardSetup && (
-        <OnboardSetupModal
-          isOpen={Boolean(onboardSetup)}
-          onClose={() => setOnboardSetup(null)}
-          route={onboardSetup.route}
-          originStop={onboardSetup.originStop}
-          vehicleId={onboardSetup.vehicleId}
-          onConfirmTrip={startTrip}
-        />
-      )}
-
-      {/* Onboard Dashboard Full HUD Modal */}
-      <OnboardDashboardModal
-        isOpen={isOnboardDashboardOpen}
-        onClose={() => setIsOnboardDashboardOpen(false)}
+        onboardSetup={onboardSetup}
+        onCloseOnboardSetup={() => setOnboardSetup(null)}
+        onStartTrip={startTrip}
+        onboardTrip={onboardTrip}
+        onboardMetrics={onboardMetrics}
+        isOnboardDashboardOpen={isOnboardDashboardOpen}
+        onCloseOnboardDashboard={() => setIsOnboardDashboardOpen(false)}
         onEndTrip={endTrip}
-        trip={onboardTrip}
-        metrics={onboardMetrics}
         isBellActive={isBellActive}
         onRingBell={ringBell}
         onAdvanceStop={advanceToNextStop}
         onRewindStop={rewindToPrevStop}
-        onToggleMute={toggleOnboardMute}
-        onSelectDestination={setOnboardDestinationStop}
-      />
-
-      {/* Onboard Minimized Floating Bottom Bar */}
-      {onboardTrip && !isOnboardDashboardOpen && (
-        <OnboardMiniBar
-          trip={onboardTrip}
-          metrics={onboardMetrics}
-          onExpand={() => setIsOnboardDashboardOpen(true)}
-        />
-      )}
-
-      {/* Apple Watch Share & Companion Guide Modal */}
-      <WatchShareModal
-        isOpen={isWatchShareModalOpen}
-        onClose={() => setIsWatchShareModalOpen(false)}
+        onToggleOnboardMute={toggleOnboardMute}
+        onSetOnboardDestinationStop={setOnboardDestinationStop}
+        onOpenOnboardDashboard={() => setIsOnboardDashboardOpen(true)}
+        isWatchShareModalOpen={isWatchShareModalOpen}
+        onCloseWatchShareModal={() => setIsWatchShareModalOpen(false)}
         onLaunchWatchView={() => {
           setIsWatchShareModalOpen(false);
           setIsWatchMode(true);
