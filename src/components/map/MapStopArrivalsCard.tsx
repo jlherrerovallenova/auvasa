@@ -177,8 +177,16 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
         </div>
       </div>
 
-      {/* 2. LÍNEA 2: hora de llegada - indicación de si llegas a tiempo o no en función de la posición */}
-      <div className="flex items-center justify-between gap-2 text-xs">
+      {/* 2. LÍNEA 2: mapa de posición del bus · subir */}
+      <ArrivalActionButtons
+        stop={stop}
+        arr={arr}
+        onLocateBus={onLocateBus}
+        onStartOnboard={onStartOnboard}
+      />
+
+      {/* 3. LÍNEA 3: hora de llegada - indicación de si llegas a tiempo o no en función de la posición */}
+      <div className="flex items-center justify-between gap-2 pt-1 text-xs">
         <div className="flex items-center gap-1.5 shrink-0">
           <ArrivalRealtimeStatus isRealtime={arr.isRealtime} exactTime={arr.exactTime} />
         </div>
@@ -189,14 +197,6 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
           </div>
         )}
       </div>
-
-      {/* 3. LÍNEA 3: mapa de posición del bus · subir */}
-      <ArrivalActionButtons
-        stop={stop}
-        arr={arr}
-        onLocateBus={onLocateBus}
-        onStartOnboard={onStartOnboard}
-      />
     </div>
   );
 };
