@@ -8,6 +8,8 @@ import { ShareArrivalModal } from './components/ShareArrivalModal.tsx';
 import { OnboardSetupModal } from './components/onboard/OnboardSetupModal.tsx';
 import { OnboardDashboardModal } from './components/onboard/OnboardDashboardModal.tsx';
 import { OnboardMiniBar } from './components/onboard/OnboardMiniBar.tsx';
+import { WatchCompanionView } from './components/watch/WatchCompanionView.tsx';
+import { WatchShareModal } from './components/watch/WatchShareModal.tsx';
 import { useStops } from './hooks/useStops.ts';
 import { useRoutes } from './hooks/useRoutes.ts';
 import { useRealtime } from './hooks/useRealtime.ts';
@@ -21,6 +23,17 @@ import type { BusStop, BusRoute, StopArrival, LiveVehicle } from './types/bus.ts
 
 export const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
+  const [isWatchMode, setIsWatchMode] = useState<boolean>(() => {
+    try {
+      const path = window.location.pathname.toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      return path.startsWith('/watch') || params.get('mode') === 'watch';
+    } catch {
+      return false;
+    }
+  });
+  const [isWatchShareModalOpen, setIsWatchShareModalOpen] = useState(false);
+
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -225,6 +238,29 @@ export const App: React.FC = () => {
       .filter((r): r is BusRoute => Boolean(r));
   }, [routes]);
 
+  if (isWatchMode) {
+    return (
+      <WatchCompanionView
+        stops={stops}
+        stopMapByCode={stopMapByCode}
+        favoriteStops={favoriteStops}
+        userLat={userLat}
+        userLon={userLon}
+        onExitWatchMode={() => {
+          setIsWatchMode(false);
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('mode');
+            const targetPath = url.pathname === '/watch' ? '/' : url.pathname;
+            window.history.pushState({}, '', targetPath + (url.search ? url.search : ''));
+          } catch {
+            // ignore
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-[100dvh] bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-8 selection:bg-teal-500 selection:text-white transition-colors">
       {/* Top Navbar */}
@@ -237,6 +273,7 @@ export const App: React.FC = () => {
         onToggleTheme={toggleTheme}
         activeTrip={onboardTrip}
         onOpenOnboard={() => setIsOnboardDashboardOpen(true)}
+        onOpenWatchModal={() => setIsWatchShareModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -351,6 +388,23 @@ export const App: React.FC = () => {
           onExpand={() => setIsOnboardDashboardOpen(true)}
         />
       )}
+
+      {/* Apple Watch Share & Companion Guide Modal */}
+      <WatchShareModal
+        isOpen={isWatchShareModalOpen}
+        onClose={() => setIsWatchShareModalOpen(false)}
+        onLaunchWatchView={() => {
+          setIsWatchShareModalOpen(false);
+          setIsWatchMode(true);
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('mode', 'watch');
+            window.history.pushState({}, '', url.pathname + (url.search ? url.search : ''));
+          } catch {
+            // ignore
+          }
+        }}
+      />
     </div>
   );
 };

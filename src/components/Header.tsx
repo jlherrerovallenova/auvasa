@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bus, Star, AlertCircle, Compass, Route, Hash, Sun, Moon, MoreHorizontal, X, ChevronRight } from 'lucide-react';
+import { Bus, Star, AlertCircle, Compass, Route, Hash, Sun, Moon, MoreHorizontal, X, ChevronRight, Watch } from 'lucide-react';
 import type { Theme } from '../hooks/useTheme.ts';
 import type { OnboardTrip } from '../types/onboard.ts';
 
@@ -14,6 +14,7 @@ interface HeaderProps {
   onToggleTheme: () => void;
   activeTrip?: OnboardTrip | null;
   onOpenOnboard?: () => void;
+  onOpenWatchModal?: () => void;
 }
 
 interface NavItemDef {
@@ -149,6 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   activeTrip,
   onOpenOnboard,
+  onOpenWatchModal,
 }) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
@@ -222,6 +224,19 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-1.5 animate-pulse" />
                 )}
               </button>
+
+              {/* Apple Watch Mode Button */}
+              {onOpenWatchModal && (
+                <button
+                  type="button"
+                  onClick={onOpenWatchModal}
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 border border-slate-200 dark:border-slate-700/80 transition-colors cursor-pointer shadow-sm flex items-center justify-center shrink-0"
+                  aria-label="Apple Watch Companion"
+                  title="Apple Watch Companion"
+                >
+                  <Watch className="w-4 h-4" />
+                </button>
+              )}
 
               {/* Theme Toggle */}
               <button
@@ -407,6 +422,29 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
               </button>
+
+              {/* 4. Apple Watch */}
+              {onOpenWatchModal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMoreOpen(false);
+                    onOpenWatchModal();
+                  }}
+                  className="w-full p-3.5 rounded-2xl border text-left flex items-center justify-between gap-3 transition-colors cursor-pointer bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700/80"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+                      <Watch className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">Apple Watch ⌚</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Modo ultraligero OLED para la muñeca</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+                </button>
+              )}
             </div>
           </div>
         </dialog>
