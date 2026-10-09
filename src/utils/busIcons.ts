@@ -27,8 +27,8 @@ export function getBusSvgIllustration({
   const cleanColor = routeColor || '#008075';
   const cleanText = routeTextColor || '#FFFFFF';
 
-  // Font size adaptado al largo del texto
-  const fontSize = cleanLine.length > 2 ? 14 : 17;
+  // Font size adaptado al largo del texto para máxima legibilidad
+  const fontSize = cleanLine.length > 2 ? 14 : 18;
 
   // Calcular rotación de la flecha de dirección (bearing en grados, 0=norte)
   const hasBearing = typeof bearing === 'number' && !isNaN(bearing);
@@ -44,20 +44,20 @@ export function getBusSvgIllustration({
         <stop offset="100%" stop-color="#000000" stop-opacity="0.18"/>
       </radialGradient>
       <filter id="shadow_bus" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="rgba(0,0,0,0.55)"/>
+        <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="rgba(0,0,0,0.5)"/>
       </filter>
     </defs>
 
     <!-- Anillo exterior pulsante (da sensación de vehículo activo) -->
     <circle cx="18" cy="18" r="17" fill="none" stroke="${cleanColor}" stroke-width="2" opacity="0.35">
-      <animate attributeName="r" values="15;17;15" dur="2.2s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="15.5;17;15.5" dur="2.2s" repeatCount="indefinite"/>
       <animate attributeName="opacity" values="0.35;0.08;0.35" dur="2.2s" repeatCount="indefinite"/>
     </circle>
 
-    <!-- Círculo principal -->
-    <circle cx="18" cy="18" r="14" fill="${cleanColor}" filter="url(#shadow_bus)"/>
+    <!-- Círculo principal amplio y legible -->
+    <circle cx="18" cy="18" r="15.2" fill="${cleanColor}" filter="url(#shadow_bus)"/>
     <!-- Overlay de brillo -->
-    <circle cx="18" cy="18" r="14" fill="url(#bg_${cleanLine.replace(/\s/g,'')})"/>
+    <circle cx="18" cy="18" r="15.2" fill="url(#bg_${cleanLine.replace(/\s/g,'')})"/>
 
     <!-- Número / nombre de línea -->
     <text

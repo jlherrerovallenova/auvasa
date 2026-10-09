@@ -13,6 +13,7 @@ interface MapViewTabProps {
   selectedRoute: BusRoute | null;
   userLat: number | null;
   userLon: number | null;
+  focusedVehicle?: LiveVehicle | null;
   theme?: 'light' | 'dark';
   onSelectStop: (stop: BusStop) => void;
   onCloseStop: () => void;
@@ -21,6 +22,7 @@ interface MapViewTabProps {
   onSetAlarm?: (stop: BusStop) => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
+  onLocateBus?: (arrival: StopArrival) => void;
   onRequestLocation: () => void;
   onClearRouteFilter: () => void;
 }
@@ -33,6 +35,7 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
   selectedRoute,
   userLat,
   userLon,
+  focusedVehicle,
   theme,
   onSelectStop,
   onCloseStop,
@@ -41,6 +44,7 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
   onSetAlarm,
   onShareArrival,
   onStartOnboard,
+  onLocateBus,
   onRequestLocation,
   onClearRouteFilter,
 }) => {
@@ -89,6 +93,7 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
           selectedRoute={selectedRoute}
           userLat={userLat}
           userLon={userLon}
+          focusedVehicle={focusedVehicle}
           theme={theme}
           onSelectStop={onSelectStop}
           onRequestLocation={onRequestLocation}
@@ -104,6 +109,7 @@ export const MapViewTab: React.FC<MapViewTabProps> = ({
             onSetAlarm={onSetAlarm}
             onShareArrival={onShareArrival}
             onStartOnboard={onStartOnboard}
+            onLocateBus={onLocateBus}
           />
         )}
       </div>

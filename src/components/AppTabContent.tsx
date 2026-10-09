@@ -39,6 +39,8 @@ interface AppTabContentProps {
   onSetAlarm: (stop: BusStop) => void;
   onShareArrival: (stop: BusStop, arr: StopArrival) => void;
   onStartOnboard: (stop: BusStop, arr: StopArrival) => void;
+  onLocateBus?: (arr: StopArrival) => void;
+  focusedVehicle?: LiveVehicle | null;
   onClearRouteFilter: () => void;
 }
 
@@ -72,6 +74,8 @@ export const AppTabContent: React.FC<AppTabContentProps> = ({
   onSetAlarm,
   onShareArrival,
   onStartOnboard,
+  onLocateBus,
+  focusedVehicle,
   onClearRouteFilter,
 }) => {
   switch (activeTab) {
@@ -133,6 +137,7 @@ export const AppTabContent: React.FC<AppTabContentProps> = ({
           selectedRoute={selectedRoute}
           userLat={userLat}
           userLon={userLon}
+          focusedVehicle={focusedVehicle}
           theme={theme}
           onSelectStop={onSelectStop}
           onCloseStop={onCloseStopModal}
@@ -141,6 +146,7 @@ export const AppTabContent: React.FC<AppTabContentProps> = ({
           onSetAlarm={onSetAlarm}
           onShareArrival={onShareArrival}
           onStartOnboard={onStartOnboard}
+          onLocateBus={onLocateBus}
           onRequestLocation={onRequestLocation}
           onClearRouteFilter={onClearRouteFilter}
         />

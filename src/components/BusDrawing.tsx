@@ -15,10 +15,10 @@ interface BusDrawingProps {
 }
 
 const PRESET_DIMENSIONS: Record<string, { std: [string, string]; art: [string, string] }> = {
-  xs: { std: ['28px', '14px'], art: ['38px', '14px'] },
-  sm: { std: ['34px', '17px'], art: ['46px', '17px'] },
-  md: { std: ['44px', '22px'], art: ['58px', '22px'] },
-  lg: { std: ['60px', '30px'], art: ['80px', '30px'] },
+  xs: { std: ['30px', '30px'], art: ['30px', '30px'] },
+  sm: { std: ['44px', '44px'], art: ['44px', '44px'] },
+  md: { std: ['52px', '52px'], art: ['52px', '52px'] },
+  lg: { std: ['64px', '64px'], art: ['64px', '64px'] },
 };
 
 function resolveDimensions(

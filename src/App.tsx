@@ -17,7 +17,7 @@ import { useDestinationAlarm } from './hooks/useDestinationAlarm.ts';
 import { useAlerts } from './hooks/useAlerts.ts';
 import { useTheme } from './hooks/useTheme.ts';
 import { useOnboardTrip } from './hooks/useOnboardTrip.ts';
-import type { BusStop, BusRoute, StopArrival } from './types/bus.ts';
+import type { BusStop, BusRoute, StopArrival, LiveVehicle } from './types/bus.ts';
 
 export const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -35,6 +35,7 @@ export const App: React.FC = () => {
   });
   const [selectedStop, setSelectedStop] = useState<BusStop | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<BusRoute | null>(null);
+  const [focusedVehicle, setFocusedVehicle] = useState<LiveVehicle | null>(null);
 
   // Custom Hooks
   const { stops, stopMapByCode } = useStops();
@@ -176,6 +177,41 @@ export const App: React.FC = () => {
     setActiveTab('map');
   }, []);
 
+  const handleLocateBus = useCallback(
+    (arr: StopArrival) => {
+      // 1. Try to find the exact live GPS vehicle
+      let found = vehicles.find(
+        v => arr.vehicleId && (v.vehicleId === arr.vehicleId || v.id === arr.vehicleId)
+      );
+
+      // 2. Fallback: find any live vehicle active on this line
+      if (!found && arr.routeShortName) {
+        const lineBuses = vehicles.filter(
+          v => v.lineName.toUpperCase() === arr.routeShortName.toUpperCase() || v.routeId === arr.routeShortName
+        );
+        if (lineBuses.length > 0) {
+          found = lineBuses[0];
+        }
+      }
+
+      if (found && found.lat && found.lon) {
+        setFocusedVehicle(found);
+        setActiveTab('map');
+      } else {
+        // Scheduled bus without active GPS yet: highlight line route on map
+        const route =
+          routeMapById.get(arr.routeShortName) ||
+          routes.find(r => r.shortName.toUpperCase() === arr.routeShortName.toUpperCase());
+        if (route) {
+          handleSelectRouteForMap(route);
+        } else {
+          setActiveTab('map');
+        }
+      }
+    },
+    [vehicles, routes, routeMapById, handleSelectRouteForMap]
+  );
+
   const handleTabChange = useCallback((tab: ActiveTab) => {
     setActiveTab(tab);
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -248,6 +284,8 @@ export const App: React.FC = () => {
           onSetAlarm={setAlarmForStop}
           onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
           onStartOnboard={handleStartOnboardFromArrival}
+          onLocateBus={handleLocateBus}
+          focusedVehicle={focusedVehicle}
           onClearRouteFilter={() => setSelectedRoute(null)}
         />
       </main>
@@ -262,6 +300,7 @@ export const App: React.FC = () => {
         onSetAlarm={setAlarmForStop}
         onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
         onStartOnboard={handleStartOnboardFromArrival}
+        onLocateBus={handleLocateBus}
       />
 
       {/* Live ETA Sharing Modal */}

@@ -14,6 +14,7 @@ interface StopArrivalsModalProps {
   onSetAlarm?: (stop: BusStop) => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
+  onLocateBus?: (arrival: StopArrival) => void;
 }
 
 interface ArrivalItemProps {
@@ -21,15 +22,20 @@ interface ArrivalItemProps {
   stop: BusStop;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
+  onLocateBus?: (arrival: StopArrival) => void;
 }
 
-const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, onStartOnboard }) => {
+const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, onStartOnboard, onLocateBus }) => {
   const isArriving = arr.minutesRemaining <= 0;
   const fleet = getBusFleetInfo(arr.vehicleId);
   const occupancy = parseOccupancy(arr.occupancy);
 
   return (
-    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/70 transition-colors space-y-2.5 shadow-sm dark:shadow-md">
+    <div
+      onClick={() => onLocateBus?.(arr)}
+      className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 hover:bg-teal-50/40 dark:hover:bg-slate-800 border border-slate-200 hover:border-teal-400/60 dark:border-slate-700/70 dark:hover:border-teal-500/50 transition-colors space-y-2.5 shadow-sm dark:shadow-md cursor-pointer group"
+      title="Pulsa para ver la ubicación de este autobús en el mapa"
+    >
       <div className="flex items-center justify-between gap-2.5">
         {/* Left: Bus illustration and Destination */}
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
@@ -40,10 +46,10 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
             routeTextColor={arr.routeTextColor}
             vehicleId={arr.vehicleId}
             size="sm"
-            className="shrink-0 drop-shadow-sm"
+            className="shrink-0 drop-shadow-sm transition-transform group-hover:scale-105"
           />
           <div className="min-w-0 flex-1">
-            <span className="font-bold text-slate-900 dark:text-white text-sm block truncate">
+            <span className="font-bold text-slate-900 dark:text-white text-sm sm:text-base block truncate group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
               {arr.destination || `Línea ${arr.routeShortName}`}
             </span>
             <div className="flex items-center gap-2 mt-0.5 text-xs">
@@ -107,19 +113,33 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({ arr, stop, onShareArrival, on
         </div>
       )}
 
-      {/* Action Row: Onboard Companion Mode & Share */}
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-750/70">
-        {onStartOnboard ? (
-          <button
-            type="button"
-            onClick={() => onStartOnboard(stop, arr)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-sm transition-colors transform active:scale-95 cursor-pointer"
-            title="Activar avisos y copiloto a bordo"
-          >
-            <Bus className="w-3.5 h-3.5" />
-            <span>Subirme a este bus</span>
-          </button>
-        ) : <div />}
+      {/* Action Row: Locate on Map, Onboard Mode & Share */}
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-750/70" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {onLocateBus && (
+            <button
+              type="button"
+              onClick={() => onLocateBus(arr)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/50 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-xs font-bold transition-colors cursor-pointer shadow-2xs active:scale-95"
+              title="Ver ubicación de este autobús en el mapa"
+            >
+              <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              <span>Ver en mapa</span>
+            </button>
+          )}
+
+          {onStartOnboard && (
+            <button
+              type="button"
+              onClick={() => onStartOnboard(stop, arr)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-sm transition-colors transform active:scale-95 cursor-pointer"
+              title="Activar avisos y copiloto a bordo"
+            >
+              <Bus className="w-3.5 h-3.5" />
+              <span>Subirme</span>
+            </button>
+          )}
+        </div>
 
         {onShareArrival && (
           <button
@@ -233,6 +253,7 @@ interface StopArrivalsListContentProps {
   onShowScheduled: () => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
+  onLocateBus?: (arrival: StopArrival) => void;
 }
 
 const StopArrivalsListContent: React.FC<StopArrivalsListContentProps> = ({
@@ -245,6 +266,7 @@ const StopArrivalsListContent: React.FC<StopArrivalsListContentProps> = ({
   onShowScheduled,
   onShareArrival,
   onStartOnboard,
+  onLocateBus,
 }) => {
   if (loading && !data) {
     return <StopArrivalsLoadingState />;
@@ -286,6 +308,7 @@ const StopArrivalsListContent: React.FC<StopArrivalsListContentProps> = ({
             stop={stop}
             onShareArrival={onShareArrival}
             onStartOnboard={onStartOnboard}
+            onLocateBus={onLocateBus}
           />
         );
       })}
@@ -301,6 +324,7 @@ interface StopArrivalsBodyProps {
   stop: BusStop;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
+  onLocateBus?: (arrival: StopArrival) => void;
 }
 
 const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
@@ -311,6 +335,7 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
   stop,
   onShareArrival,
   onStartOnboard,
+  onLocateBus,
 }) => {
   const [onlyRealtime, setOnlyRealtime] = React.useState<boolean>(() => {
     const saved = localStorage.getItem('vallabus_only_realtime');
@@ -374,6 +399,7 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
         onShowScheduled={() => updateRealtimeFilter(false)}
         onShareArrival={onShareArrival}
         onStartOnboard={onStartOnboard}
+        onLocateBus={onLocateBus}
       />
     </div>
   );
@@ -388,6 +414,7 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
   onSetAlarm,
   onShareArrival,
   onStartOnboard,
+  onLocateBus,
 }) => {
   const { data, loading, error, refresh } = useStopArrivals(stop?.code || null);
   const [expandedStopCode, setExpandedStopCode] = useState<string | null>(null);
@@ -494,6 +521,7 @@ export const StopArrivalsModal: React.FC<StopArrivalsModalProps> = ({
           stop={stop}
           onShareArrival={onShareArrival}
           onStartOnboard={onStartOnboard}
+          onLocateBus={onLocateBus}
         />
 
         {/* Modal Footer */}

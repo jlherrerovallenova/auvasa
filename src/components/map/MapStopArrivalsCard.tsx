@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle, ChevronDown, Bus } from 'lucide-react';
+import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle, ChevronDown, Bus, MapPin, Minimize2, Maximize2 } from 'lucide-react';
 import type { BusStop, StopArrival } from '../../types/bus.ts';
 import { useStopArrivals } from '../../hooks/useStopArrivals.ts';
 import { getBusFleetInfo } from '../../utils/fleet.ts';
@@ -13,6 +13,7 @@ interface MapStopArrivalsCardProps {
   onSetAlarm?: (stop: BusStop) => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
+  onLocateBus?: (arrival: StopArrival) => void;
 }
 
 interface MapArrivalRowProps {
@@ -20,6 +21,7 @@ interface MapArrivalRowProps {
   stop: BusStop;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
+  onLocateBus?: (arrival: StopArrival) => void;
 }
 
 const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
@@ -27,24 +29,30 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
   stop,
   onShareArrival,
   onStartOnboard,
+  onLocateBus,
 }) => {
   const isArriving = arr.minutesRemaining <= 0;
   const fleet = getBusFleetInfo(arr.vehicleId);
 
   return (
-    <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-750 transition-colors flex items-center justify-between gap-2 shadow-2xs">
+    <div
+      onClick={() => onLocateBus?.(arr)}
+      className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-teal-50/50 dark:hover:bg-slate-800 border border-slate-200/80 hover:border-teal-400/60 dark:border-slate-750 dark:hover:border-teal-500/50 transition-colors flex items-center justify-between gap-2.5 shadow-2xs cursor-pointer group"
+      title="Pulsa para ver la ubicación de este autobús en el mapa"
+    >
       {/* Left: Bus Drawing & Destination */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
         <BusDrawing
           fleet={fleet}
           lineName={arr.routeShortName}
           routeColor={arr.routeColor || '#008075'}
           routeTextColor={arr.routeTextColor || '#FFFFFF'}
           vehicleId={arr.vehicleId}
-          className="shrink-0 drop-shadow-2xs"
+          size="sm"
+          className="shrink-0 drop-shadow-2xs transition-transform group-hover:scale-105"
         />
         <div className="min-w-0 flex-1">
-          <span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
+          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white block truncate group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">
             {arr.destination || `Línea ${arr.routeShortName}`}
           </span>
           <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
@@ -64,7 +72,20 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
       </div>
 
       {/* Right: Actions & Arrival Time Badge */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+        {onLocateBus && (
+          <button
+            type="button"
+            onClick={() => onLocateBus(arr)}
+            className="p-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900/80 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800 transition-colors cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1 text-[11px] font-bold"
+            title="Ver ubicación de este autobús en el mapa"
+            aria-label="Ver ubicación en el mapa"
+          >
+            <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+            <span className="hidden sm:inline">Mapa</span>
+          </button>
+        )}
+
         {onStartOnboard && (
           <button
             type="button"
@@ -111,16 +132,99 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
   );
 };
 
+interface MapHeaderActionButtonsProps {
+  loading: boolean;
+  isFavorite: boolean;
+  isMinimized: boolean;
+  onRefresh: () => void;
+  onToggleFavorite: () => void;
+  onSetAlarm?: () => void;
+  onToggleMinimize: () => void;
+  onClose: () => void;
+}
+
+const MapHeaderActionButtons: React.FC<MapHeaderActionButtonsProps> = ({
+  loading,
+  isFavorite,
+  isMinimized,
+  onRefresh,
+  onToggleFavorite,
+  onSetAlarm,
+  onToggleMinimize,
+  onClose,
+}) => (
+  <div className="flex items-center gap-1 shrink-0">
+    <button
+      type="button"
+      onClick={onRefresh}
+      disabled={loading}
+      className="p-1.5 sm:p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+      title="Actualizar tiempos en directo"
+      aria-label="Actualizar tiempos en directo"
+    >
+      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-600' : ''}`} />
+    </button>
+
+    <button
+      type="button"
+      onClick={onToggleFavorite}
+      className={`p-1.5 sm:p-2 rounded-xl transition-colors cursor-pointer ${
+        isFavorite
+          ? 'text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 bg-amber-500/10'
+          : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+      }`}
+      title={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+      aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+    >
+      <Star className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+    </button>
+
+    {onSetAlarm && (
+      <button
+        type="button"
+        onClick={onSetAlarm}
+        className="p-1.5 sm:p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+        title="Avisarme al llegar por GPS"
+        aria-label="Avisarme al llegar"
+      >
+        <Bell className="w-4 h-4" />
+      </button>
+    )}
+
+    <button
+      type="button"
+      onClick={onToggleMinimize}
+      className="p-1.5 sm:p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+      title={isMinimized ? 'Expandir tarjeta de parada' : 'Minimizar tarjeta para ver el mapa'}
+      aria-label={isMinimized ? 'Expandir tarjeta' : 'Minimizar tarjeta'}
+    >
+      {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+    </button>
+
+    <button
+      type="button"
+      onClick={onClose}
+      className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer ml-0.5"
+      title="Cerrar panel de parada"
+      aria-label="Cerrar panel de parada"
+    >
+      <X className="w-4 h-4" />
+    </button>
+  </div>
+);
+
 interface MapStopCardHeaderProps {
   stop: BusStop;
   loading: boolean;
   isFavorite: boolean;
   showRoutes: boolean;
+  isMinimized: boolean;
   onRefresh: () => void;
   onToggleFavorite: () => void;
   onSetAlarm?: () => void;
   onClose: () => void;
   onToggleRoutes: () => void;
+  onToggleMinimize: () => void;
 }
 
 const MapStopCardHeader: React.FC<MapStopCardHeaderProps> = ({
@@ -128,11 +232,13 @@ const MapStopCardHeader: React.FC<MapStopCardHeaderProps> = ({
   loading,
   isFavorite,
   showRoutes,
+  isMinimized,
   onRefresh,
   onToggleFavorite,
   onSetAlarm,
   onClose,
   onToggleRoutes,
+  onToggleMinimize,
 }) => (
   <div className="p-3.5 sm:p-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-850/80 shrink-0">
     <div className="flex items-start justify-between gap-2">
@@ -150,54 +256,16 @@ const MapStopCardHeader: React.FC<MapStopCardHeaderProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={loading}
-          className="p-1.5 sm:p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          title="Actualizar tiempos en directo"
-          aria-label="Actualizar tiempos en directo"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-600' : ''}`} />
-        </button>
-
-        <button
-          type="button"
-          onClick={onToggleFavorite}
-          className={`p-1.5 sm:p-2 rounded-xl transition-colors cursor-pointer ${
-            isFavorite
-              ? 'text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 bg-amber-500/10'
-              : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800'
-          }`}
-          title={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
-          aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
-        >
-          <Star className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-        </button>
-
-        {onSetAlarm && (
-          <button
-            type="button"
-            onClick={onSetAlarm}
-            className="p-1.5 sm:p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Avisarme al llegar por GPS"
-            aria-label="Avisarme al llegar"
-          >
-            <Bell className="w-4 h-4" />
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer ml-1"
-          title="Cerrar panel de parada"
-          aria-label="Cerrar panel de parada"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+      <MapHeaderActionButtons
+        loading={loading}
+        isFavorite={isFavorite}
+        isMinimized={isMinimized}
+        onRefresh={onRefresh}
+        onToggleFavorite={onToggleFavorite}
+        onSetAlarm={onSetAlarm}
+        onToggleMinimize={onToggleMinimize}
+        onClose={onClose}
+      />
     </div>
 
     {stop.routes && stop.routes.length > 0 && (
@@ -242,6 +310,7 @@ interface MapStopCardBodyProps {
   onRefresh: () => void;
   onShareArrival?: (stop: BusStop, arrival: StopArrival) => void;
   onStartOnboard?: (stop: BusStop, arrival: StopArrival) => void;
+  onLocateBus?: (arrival: StopArrival) => void;
 }
 
 const MapStopCardBody: React.FC<MapStopCardBodyProps> = ({
@@ -252,6 +321,7 @@ const MapStopCardBody: React.FC<MapStopCardBodyProps> = ({
   onRefresh,
   onShareArrival,
   onStartOnboard,
+  onLocateBus,
 }) => {
   if (loading && !data) {
     return (
@@ -314,6 +384,7 @@ const MapStopCardBody: React.FC<MapStopCardBodyProps> = ({
                 stop={stop}
                 onShareArrival={onShareArrival}
                 onStartOnboard={onStartOnboard}
+                onLocateBus={onLocateBus}
               />
             );
           })}
@@ -331,34 +402,41 @@ export const MapStopArrivalsCard: React.FC<MapStopArrivalsCardProps> = ({
   onSetAlarm,
   onShareArrival,
   onStartOnboard,
+  onLocateBus,
 }) => {
   const { data, loading, error, refresh } = useStopArrivals(stop.code);
   const [expandedStopCode, setExpandedStopCode] = useState<string | null>(null);
+  const [isMinimized, setIsMinimized] = useState(false);
   const showRoutes = expandedStopCode === stop.code;
 
   return (
-    <div className="absolute bottom-3 left-2 right-2 sm:left-4 sm:right-auto sm:bottom-4 sm:w-[420px] max-w-[calc(100%-1rem)] sm:max-w-md z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col max-h-[55dvh] sm:max-h-[480px] overflow-hidden animate-in slide-in-from-bottom duration-200 text-slate-800 dark:text-slate-100 transition-colors">
+    <div className={`absolute bottom-3 left-2 right-2 sm:left-4 sm:right-auto sm:bottom-4 sm:w-[420px] max-w-[calc(100%-1rem)] sm:max-w-md z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col ${isMinimized ? 'max-h-[72px]' : 'max-h-[55dvh] sm:max-h-[480px]'} overflow-hidden animate-in slide-in-from-bottom duration-200 text-slate-800 dark:text-slate-100 transition-[max-height]`}>
       <MapStopCardHeader
         stop={stop}
         loading={loading}
         isFavorite={isFavorite}
         showRoutes={showRoutes}
+        isMinimized={isMinimized}
         onRefresh={refresh}
         onToggleFavorite={() => onToggleFavorite(stop.code)}
         onSetAlarm={onSetAlarm ? () => onSetAlarm(stop) : undefined}
         onClose={onClose}
         onToggleRoutes={() => setExpandedStopCode(prev => (prev === stop.code ? null : stop.code))}
+        onToggleMinimize={() => setIsMinimized(prev => !prev)}
       />
 
-      <MapStopCardBody
-        data={data}
-        loading={loading}
-        error={error}
-        stop={stop}
-        onRefresh={refresh}
-        onShareArrival={onShareArrival}
-        onStartOnboard={onStartOnboard}
-      />
+      {!isMinimized && (
+        <MapStopCardBody
+          data={data}
+          loading={loading}
+          error={error}
+          stop={stop}
+          onRefresh={refresh}
+          onShareArrival={onShareArrival}
+          onStartOnboard={onStartOnboard}
+          onLocateBus={onLocateBus}
+        />
+      )}
     </div>
   );
 };

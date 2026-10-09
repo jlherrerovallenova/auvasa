@@ -20,6 +20,7 @@ interface MapLayersProps {
   trafficSummary?: CityTrafficSummary;
   userLat: number | null;
   userLon: number | null;
+  focusedVehicle?: LiveVehicle | null;
   onSelectStop: (stop: BusStop) => void;
 }
 
@@ -47,6 +48,7 @@ export function useMapLayers({
   trafficSummary,
   userLat,
   userLon,
+  focusedVehicle,
   onSelectStop,
 }: MapLayersProps) {
   const userMarkerRef = useRef<L.Marker | null>(null);
@@ -59,6 +61,24 @@ export function useMapLayers({
   // Persistent vehicle markers for smooth kinematic interpolation
   const vehicleTrackerRef = useRef<Map<string, InterpolatedVehicle>>(new Map());
   const animFrameRef = useRef<number | null>(null);
+
+  // Auto-center map and highlight popup when a specific vehicle is focused from the arrival list
+  useEffect(() => {
+    if (!map || !focusedVehicle || !focusedVehicle.lat || !focusedVehicle.lon) return;
+
+    map.flyTo([focusedVehicle.lat, focusedVehicle.lon], 16, { duration: 1.2 });
+
+    const timer = setTimeout(() => {
+      const vehicleKey = focusedVehicle.id || focusedVehicle.vehicleId;
+      const tracker = vehicleTrackerRef.current;
+      if (tracker.has(vehicleKey)) {
+        const entry = tracker.get(vehicleKey);
+        entry?.marker.openPopup();
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [map, focusedVehicle]);
 
   const onSelectStopRef = useRef(onSelectStop);
   useEffect(() => {

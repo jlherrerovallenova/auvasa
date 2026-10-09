@@ -15,6 +15,7 @@ interface LiveMapProps {
   selectedRoute: BusRoute | null;
   userLat: number | null;
   userLon: number | null;
+  focusedVehicle?: LiveVehicle | null;
   theme?: 'light' | 'dark';
   onSelectStop: (stop: BusStop) => void;
   onRequestLocation: () => void;
@@ -29,6 +30,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   selectedRoute,
   userLat,
   userLon,
+  focusedVehicle,
   theme,
   onSelectStop,
   onRequestLocation,
@@ -172,6 +174,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     trafficSummary,
     userLat,
     userLon,
+    focusedVehicle,
     onSelectStop,
   });
 
