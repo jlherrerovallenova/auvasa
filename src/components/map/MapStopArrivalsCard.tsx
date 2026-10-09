@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, RefreshCw, Clock, Bell, Share2, AlertCircle, ChevronDown, Bus, MapPin, Minimize2, Maximize2, Footprints } from 'lucide-react';
+import { X, Star, RefreshCw, Clock, Bell, AlertCircle, ChevronDown, Bus, MapPin, Minimize2, Maximize2, Footprints } from 'lucide-react';
 import type { BusStop, StopArrival } from '../../types/bus.ts';
 import { useStopArrivals } from '../../hooks/useStopArrivals.ts';
 import { getBusFleetInfo } from '../../utils/fleet.ts';
@@ -37,7 +37,6 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
   stop,
   userLat,
   userLon,
-  onShareArrival,
   onStartOnboard,
   onLocateBus,
 }) => {
@@ -128,18 +127,6 @@ const MapArrivalRow: React.FC<MapArrivalRowProps> = ({
           >
             <Bus className="w-3 h-3" />
             <span className="hidden xs:inline">Subirme</span>
-          </button>
-        )}
-
-        {onShareArrival && (
-          <button
-            type="button"
-            onClick={() => onShareArrival(stop, arr)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-750 transition-colors cursor-pointer shrink-0"
-            title="Compartir hora de llegada"
-            aria-label="Compartir hora de llegada"
-          >
-            <Share2 className="w-3.5 h-3.5" />
           </button>
         )}
 

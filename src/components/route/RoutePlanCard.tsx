@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Footprints, Clock, Share2, Check, Radio, ChevronDown, ChevronUp } from 'lucide-react';
+import { Footprints, Clock, Radio, ChevronDown, ChevronUp } from 'lucide-react';
 import type { RoutePlanResult } from '../../utils/routePlanner.ts';
 import type { BusStop } from '../../types/bus.ts';
 
@@ -16,19 +16,7 @@ export const RoutePlanCard: React.FC<RoutePlanCardProps> = ({
   onSelectStop,
   stopMapByCode,
 }) => {
-  const [copied, setCopied] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
-
-  const handleCopy = () => {
-    const textLines = [
-      `📍 Ruta de ${plan.origin.name} a ${plan.destination.name}`,
-      `⏱️ Duración: ~${plan.totalMinutes} min (Llegada aprox: ${plan.arrivalTime})`,
-      ...plan.steps.map((s, idx) => `${idx + 1}. ${s.description}`),
-    ];
-    navigator.clipboard.writeText(textLines.join('\n'));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-sm dark:shadow-md">
@@ -105,15 +93,6 @@ export const RoutePlanCard: React.FC<RoutePlanCardProps> = ({
           {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
 
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
-          title="Copiar ruta al portapapeles"
-        >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
-          <span>{copied ? '¡Copiado!' : 'Compartir'}</span>
-        </button>
       </div>
 
       {/* Step-by-Step Timeline */}

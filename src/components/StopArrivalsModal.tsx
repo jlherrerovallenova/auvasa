@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Share2, Zap, Accessibility, ChevronDown, Bus, Footprints } from 'lucide-react';
+import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, Zap, Accessibility, ChevronDown, Bus, Footprints } from 'lucide-react';
 import type { BusStop, StopArrival } from '../types/bus.ts';
 import { useStopArrivals } from '../hooks/useStopArrivals.ts';
 import { getBusFleetInfo, parseOccupancy } from '../utils/fleet.ts';
@@ -38,7 +38,6 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
   stop,
   userLat,
   userLon,
-  onShareArrival,
   onStartOnboard,
   onLocateBus,
 }) => {
@@ -187,18 +186,6 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
             >
               <Bus className="w-3 h-3 shrink-0" />
               <span>Subir</span>
-            </button>
-          )}
-
-          {onShareArrival && (
-            <button
-              type="button"
-              onClick={() => onShareArrival(stop, arr)}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Compartir hora de llegada"
-              aria-label="Compartir llegada"
-            >
-              <Share2 className="w-3.5 h-3.5" />
             </button>
           )}
         </div>

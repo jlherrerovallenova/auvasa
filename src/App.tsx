@@ -4,7 +4,6 @@ import { AppTabContent } from './components/AppTabContent.tsx';
 import { DestinationAlarmBanner } from './components/DestinationAlarmBanner.tsx';
 import { SharedArrivalBanner } from './components/SharedArrivalBanner.tsx';
 import { StopArrivalsModal } from './components/StopArrivalsModal.tsx';
-import { ShareArrivalModal } from './components/ShareArrivalModal.tsx';
 import { OnboardSetupModal } from './components/onboard/OnboardSetupModal.tsx';
 import { OnboardDashboardModal } from './components/onboard/OnboardDashboardModal.tsx';
 import { OnboardMiniBar } from './components/onboard/OnboardMiniBar.tsx';
@@ -80,9 +79,6 @@ export const App: React.FC = () => {
     setAlarmForStop,
     cancelAlarm,
   } = useDestinationAlarm();
-
-  // Live ETA Sharing Modal
-  const [sharingData, setSharingData] = useState<{ stop: BusStop; arrival: StopArrival } | null>(null);
 
   // Modo A Bordo (Copiloto en viaje)
   const {
@@ -319,7 +315,6 @@ export const App: React.FC = () => {
           onToggleFavoriteStop={toggleFavoriteStop}
           onToggleFavoriteLine={toggleFavoriteLine}
           onSetAlarm={setAlarmForStop}
-          onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
           onStartOnboard={handleStartOnboardFromArrival}
           onLocateBus={handleLocateBus}
           focusedVehicle={focusedVehicle}
@@ -335,23 +330,12 @@ export const App: React.FC = () => {
         onToggleFavorite={toggleFavoriteStop}
         onViewOnMap={handleViewStopOnMap}
         onSetAlarm={setAlarmForStop}
-        onShareArrival={(stop, arrival) => setSharingData({ stop, arrival })}
         onStartOnboard={handleStartOnboardFromArrival}
         onLocateBus={handleLocateBus}
         userLat={userLat}
         userLon={userLon}
         onRequestLocation={requestLocation}
       />
-
-      {/* Live ETA Sharing Modal */}
-      {sharingData && (
-        <ShareArrivalModal
-          isOpen={Boolean(sharingData)}
-          onClose={() => setSharingData(null)}
-          stop={sharingData.stop}
-          arrival={sharingData.arrival}
-        />
-      )}
 
       {/* Onboard Setup Modal (Choose destination stop when boarding) */}
       {onboardSetup && (

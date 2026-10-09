@@ -37,7 +37,7 @@ interface AppTabContentProps {
   onToggleFavoriteStop: (code: string) => void;
   onToggleFavoriteLine: (id: string) => void;
   onSetAlarm: (stop: BusStop) => void;
-  onShareArrival: (stop: BusStop, arr: StopArrival) => void;
+  onShareArrival?: (stop: BusStop, arr: StopArrival) => void;
   onStartOnboard: (stop: BusStop, arr: StopArrival) => void;
   onLocateBus?: (arr: StopArrival) => void;
   focusedVehicle?: LiveVehicle | null;
