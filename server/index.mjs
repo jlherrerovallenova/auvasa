@@ -296,11 +296,12 @@ async function calculateStopArrivals(stopCode) {
 
   const nowSec = Math.floor(Date.now() / 1000);
   const nowMadrid = new Date();
-  const currentHours = String(nowMadrid.getHours()).padStart(2, '0');
-  const currentMinutes = String(nowMadrid.getMinutes()).padStart(2, '0');
-  const currentTimeStr = `${currentHours}:${currentMinutes}:00`;
 
   const realTimeArrivals = [];
+  // FIX #1: Track (tripId|stopCode) pairs to avoid duplicates.
+  // A tripUpdate can emit multiple stopTimeUpdates for the same stop (delay propagation),
+  // which would otherwise show the same line twice with near-identical times.
+  const seenRTKeys = new Set();
 
   for (const tu of rtState.tripUpdates) {
     const tripSeqMap = tripStopSeqMap[tu.tripId];
@@ -314,6 +315,11 @@ async function calculateStopArrivals(stopCode) {
         const arrivalTimestamp = stu.arrival || stu.departure;
         if (!arrivalTimestamp) continue;
 
+        // Deduplicate: same trip visiting the same stop only once
+        const rtKey = `${tu.tripId}|${mappedStop.stopCode || stopCode}`;
+        if (seenRTKeys.has(rtKey)) continue;
+        seenRTKeys.add(rtKey);
+
         const diffSeconds = arrivalTimestamp - nowSec;
         if (diffSeconds >= -90 && diffSeconds <= 3600) {
           const route = routeById.get(tu.routeId) || routeByShortName.get(tu.routeId);
@@ -326,11 +332,26 @@ async function calculateStopArrivals(stopCode) {
             timeZone: 'Europe/Madrid'
           });
 
+          // Determine directional headsign (e.g. "COVARESA" instead of full generic "Barrio España - Covaresa")
+          let destination = route?.name || '';
+          if (route?.directions) {
+            const dir0Stops = route.directions['0']?.stops || [];
+            const dir1Stops = route.directions['1']?.stops || [];
+            const inDir0 = dir0Stops.some(s => s.stopCode === stopCode || s.stopId === stopObj.id);
+            const inDir1 = dir1Stops.some(s => s.stopCode === stopCode || s.stopId === stopObj.id);
+            if (inDir0 && !inDir1 && route.directions['0']?.headsign) {
+              destination = route.directions['0'].headsign;
+            } else if (inDir1 && !inDir0 && route.directions['1']?.headsign) {
+              destination = route.directions['1'].headsign;
+            }
+          }
+
           realTimeArrivals.push({
+            tripId: tu.tripId,
             routeShortName: route?.shortName || tu.routeId,
             routeColor: route?.color || '#008075',
             routeTextColor: route?.textColor || '#FFFFFF',
-            destination: route?.name || '',
+            destination,
             exactTime: timeFormatted,
             timestamp: arrivalTimestamp,
             secondsRemaining: diffSeconds,
@@ -345,6 +366,9 @@ async function calculateStopArrivals(stopCode) {
       }
     }
   }
+
+  // Exact tripId set of active GPS vehicles for 100% precise deduplication
+  const activeRTTripIds = new Set(realTimeArrivals.map(r => r.tripId).filter(Boolean));
 
   const scheduledList = scheduledArrivals[stopCode] || [];
   const scheduledArrivalsOutput = [];
@@ -366,42 +390,67 @@ async function calculateStopArrivals(stopCode) {
       continue;
     }
 
-    if (s.d >= currentTimeStr) {
-      const [h, m, sec] = s.d.split(':').map(Number);
-      const schedDate = new Date();
-      schedDate.setHours(h, m, sec || 0, 0);
-      const schedTimestamp = Math.floor(schedDate.getTime() / 1000);
-      const diffSec = schedTimestamp - nowSec;
+    // Exact tripId match: if this specific trip is already running in real-time, skip static schedule
+    if (s.t && activeRTTripIds.has(s.t)) {
+      continue;
+    }
 
-      if (diffSec >= 0 && diffSec <= 5400) {
-        // If there is already a live GPS vehicle on this route approaching this stop
-        // within +/- 10 minutes (600s), that live bus is already covering this departure.
-        // Avoid showing a ghost theoretical arrival for a bus that is delayed in traffic.
-        const hasRealtimeNearby = realTimeArrivals.some(
-          rta => rta.routeShortName === s.r && Math.abs(rta.timestamp - schedTimestamp) < 600
-        );
+    // Parse departure as seconds since midnight — robust against GTFS hours >= 24
+    // e.g. "24:38:42" (B3 night bus) = 88722 seconds, correctly maps to next-day 00:38:42
+    const [rawH, rawM, rawSec] = s.d.split(':').map(Number);
+    const depSecOfDay = rawH * 3600 + (rawM || 0) * 60 + (rawSec || 0);
+    const currentSecOfDay = nowMadrid.getHours() * 3600 + nowMadrid.getMinutes() * 60 + nowMadrid.getSeconds();
 
-        if (!hasRealtimeNearby) {
-          scheduledArrivalsOutput.push({
-            routeShortName: s.r,
-            routeColor: s.c,
-            routeTextColor: '#FFFFFF',
-            destination: s.h || '',
-            exactTime: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
-            timestamp: schedTimestamp,
-            secondsRemaining: diffSec,
-            minutesRemaining: Math.round(diffSec / 60),
-            isRealtime: false,
-            vehicleId: null,
-            licensePlate: null,
-            occupancy: 'UNKNOWN',
-          });
-        }
+    // Only show departures that haven't happened yet (30s grace for buses leaving right now)
+    if (depSecOfDay < currentSecOfDay - 30) {
+      continue;
+    }
+
+    // Build actual timestamp: start of today + depSecOfDay (setSeconds handles >86400 correctly)
+    const schedDate = new Date();
+    schedDate.setHours(0, 0, 0, 0);
+    schedDate.setSeconds(depSecOfDay);
+    const schedTimestamp = Math.floor(schedDate.getTime() / 1000);
+    const diffSec = schedTimestamp - nowSec;
+
+    if (diffSec >= -30 && diffSec <= 5400) {
+      // Fallback dedup only if tripId was missing or unmatched: tight 4-minute window and same route
+      const hasRealtimeNearby = realTimeArrivals.some(
+        rta => rta.routeShortName === s.r && Math.abs(rta.timestamp - schedTimestamp) < 240
+      );
+
+      if (!hasRealtimeNearby) {
+        const displayH = rawH % 24; // normalize hour for display (24→0, 25→1, etc.)
+        scheduledArrivalsOutput.push({
+          routeShortName: s.r,
+          routeColor: s.c,
+          routeTextColor: '#FFFFFF',
+          destination: s.h || '',
+          exactTime: `${String(displayH).padStart(2, '0')}:${String(rawM || 0).padStart(2, '0')}`,
+          timestamp: schedTimestamp,
+          secondsRemaining: diffSec,
+          minutesRemaining: Math.max(0, Math.round(diffSec / 60)),
+          isRealtime: false,
+          vehicleId: null,
+          licensePlate: null,
+          occupancy: 'UNKNOWN',
+        });
       }
     }
   }
 
-  const allArrivals = [...realTimeArrivals, ...scheduledArrivalsOutput]
+  // FIX #5: Deduplicate scheduled arrivals by (routeShortName, timestamp).
+  // Multiple serviceIds can map to the exact same trip at the same time on special days
+  // (festivos, school/football schedules), causing the same bus to appear 2-3 times.
+  const seenSchedKeys = new Set();
+  const dedupedSchedArrivals = scheduledArrivalsOutput.filter(s => {
+    const key = `${s.routeShortName}|${s.timestamp}`;
+    if (seenSchedKeys.has(key)) return false;
+    seenSchedKeys.add(key);
+    return true;
+  });
+
+  const allArrivals = [...realTimeArrivals, ...dedupedSchedArrivals]
     .sort((a, b) => a.secondsRemaining - b.secondsRemaining)
     .slice(0, 15);
 

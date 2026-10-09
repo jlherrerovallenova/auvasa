@@ -28,7 +28,7 @@ export function getBusSvgIllustration({
   const cleanText = routeTextColor || '#FFFFFF';
 
   // Font size adaptado al largo del texto
-  const fontSize = cleanLine.length > 2 ? 11 : 13;
+  const fontSize = cleanLine.length > 2 ? 14 : 17;
 
   // Calcular rotación de la flecha de dirección (bearing en grados, 0=norte)
   const hasBearing = typeof bearing === 'number' && !isNaN(bearing);

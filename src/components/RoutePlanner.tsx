@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Route, Sparkles, ArrowUpDown, Loader2 } from 'lucide-react';
 import type { BusStop, BusRoute, LiveVehicle } from '../types/bus.ts';
 import { findDoorToDoorPlans, type RoutePlanResult } from '../utils/routePlanner.ts';
