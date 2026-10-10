@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Star, RefreshCw, Radio, Clock, MapPin, AlertCircle, Bell, ChevronDown, Bus, Footprints } from 'lucide-react';
 import type { BusStop, StopArrival } from '../types/bus.ts';
 import { useStopArrivals } from '../hooks/useStopArrivals.ts';
-import { getBusFleetInfo } from '../utils/fleet.ts';
+import { getBusFleetInfo, parseOccupancy } from '../utils/fleet.ts';
 import { calculateWalkingRadar } from '../utils/walkingRadar.ts';
 import { BusDrawing } from './BusDrawing.tsx';
 
@@ -49,22 +49,47 @@ const RadarBadge: React.FC<RadarBadgeProps> = ({ radar }) => (
   </span>
 );
 
-const ArrivalRealtimeStatus: React.FC<{ isRealtime: boolean; exactTime: string }> = ({
-  isRealtime,
-  exactTime,
-}) => (
-  isRealtime ? (
-    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-      <span>GPS ({exactTime})</span>
-    </span>
-  ) : (
+const ArrivalRealtimeStatus: React.FC<{
+  arr: StopArrival;
+}> = ({ arr }) => {
+  const isGpsLive = arr.liveStatus === 'gps_live' || (arr.isRealtime && !!arr.vehicleId);
+  const isSae = arr.liveStatus === 'scheduled_sae';
+
+  if (isGpsLive) {
+    return (
+      <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+        <span>GPS ({arr.exactTime})</span>
+        {arr.licensePlate && (
+          <span className="text-slate-500 dark:text-slate-400 font-mono text-[10px] ml-0.5 shrink-0">
+            ({arr.licensePlate})
+          </span>
+        )}
+        {arr.speed !== undefined && arr.speed !== null && arr.speed > 0 && (
+          <span className="text-slate-400 dark:text-slate-500 text-[10px] ml-0.5">
+            • {arr.speed} km/h
+          </span>
+        )}
+      </span>
+    );
+  }
+
+  if (isSae) {
+    return (
+      <span className="inline-flex items-center gap-1 font-medium text-sky-600 dark:text-sky-400">
+        <Radio className="w-3 h-3 shrink-0 text-sky-500" />
+        <span>Estimado Central ({arr.exactTime})</span>
+      </span>
+    );
+  }
+
+  return (
     <span className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
       <Clock className="w-3 h-3 shrink-0" />
-      <span>{exactTime}</span>
+      <span>{arr.exactTime}</span>
     </span>
-  )
-);
+  );
+};
 
 const ArrivalActionButtons: React.FC<{
   stop: BusStop;
@@ -119,7 +144,10 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
   onLocateBus,
 }) => {
   const isArriving = arr.minutesRemaining <= 0;
+  const isGpsLive = arr.liveStatus === 'gps_live' || (arr.isRealtime && !!arr.vehicleId);
+  const isSae = arr.liveStatus === 'scheduled_sae';
   const fleet = getBusFleetInfo(arr.vehicleId);
+  const occupancy = parseOccupancy(arr.occupancy);
   const radar = calculateWalkingRadar(
     userLat ?? null,
     userLon ?? null,
@@ -168,8 +196,10 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
             className={`inline-flex items-center px-2.5 py-1 rounded-xl font-black text-xs sm:text-sm shadow-2xs ${
               isArriving
                 ? 'bg-emerald-500 text-slate-950 animate-pulse font-extrabold'
-                : arr.isRealtime
+                : isGpsLive
                 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                : isSae
+                ? 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30'
                 : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
             }`}
           >
@@ -177,6 +207,23 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Fleet and Occupancy Radar Badges */}
+      {isGpsLive && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-200/80 dark:border-slate-750/70 text-[10px]">
+          <span className={`px-2 py-0.5 rounded-md font-medium border ${occupancy.bgClass} ${occupancy.colorClass}`}>
+            {occupancy.label}
+          </span>
+          <span className="px-2 py-0.5 rounded-md font-medium bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-750 flex items-center gap-1">
+            <span>{fleet.model}</span>
+          </span>
+          {fleet.hasPMR && (
+            <span className="px-1.5 py-0.5 rounded-md bg-sky-50 dark:bg-slate-900 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-slate-750 flex items-center gap-0.5" title="Rampa accesible para movilidad reducida">
+              <span>PMR</span>
+            </span>
+          )}
+        </div>
+      )}
 
       {/* 2. LÍNEA 2: mapa de posición del bus · subir */}
       <ArrivalActionButtons
@@ -189,7 +236,7 @@ const ArrivalItem: React.FC<ArrivalItemProps> = ({
       {/* 3. LÍNEA 3: hora de llegada - indicación de si llegas a tiempo o no en función de la posición */}
       <div className="flex items-center justify-between gap-2 pt-1 text-xs">
         <div className="flex items-center gap-1.5 shrink-0">
-          <ArrivalRealtimeStatus isRealtime={arr.isRealtime} exactTime={arr.exactTime} />
+          <ArrivalRealtimeStatus arr={arr} />
         </div>
 
         {radar && (

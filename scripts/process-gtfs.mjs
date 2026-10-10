@@ -182,12 +182,18 @@ async function processGTFS() {
 
       const tripInfo = tripMap[tripId];
       if (tripInfo) {
-        // Map trip stop sequences for RT lookup
-        if (!tripStopSeqMap[tripId]) tripStopSeqMap[tripId] = {};
-        tripStopSeqMap[tripId][seq] = {
+        const [hh, mm, ss] = depTime.split(':').map(Number);
+        const schedSec = (hh || 0) * 3600 + (mm || 0) * 60 + (ss || 0);
+
+        // Map trip stop sequences for RT lookup & delay interpolation
+        if (!tripStopSeqMap[tripId]) tripStopSeqMap[tripId] = [];
+        tripStopSeqMap[tripId].push({
+          seq,
           stopId,
-          stopCode: stopIdToCode[stopId] || stopId
-        };
+          stopCode: stopIdToCode[stopId] || stopId,
+          depTime,
+          schedSec,
+        });
 
         // Add line to stop
         const routeObj = routes[tripInfo.routeId];
@@ -202,11 +208,10 @@ async function processGTFS() {
           sampleStopsPerRouteDir[key].push({ seq, stopId });
         }
 
-        // Index scheduled arrivals per stopCode (sample for fast lookup, only first 20 per day or sorted)
+        // Index scheduled arrivals per stopCode
         const stopCode = stopIdToCode[stopId];
         if (stopCode && routeObj) {
           if (!scheduledArrivalsByStop[stopCode]) scheduledArrivalsByStop[stopCode] = [];
-          // Store compact schedule record
           scheduledArrivalsByStop[stopCode].push({
             r: routeObj.shortName,
             c: routeObj.color,
@@ -218,6 +223,11 @@ async function processGTFS() {
         }
       }
     }
+  }
+
+  // Ensure tripStopSeqMap arrays are sorted by sequence
+  for (const tid in tripStopSeqMap) {
+    tripStopSeqMap[tid].sort((a, b) => a.seq - b.seq);
   }
 
   // Sort and deduplicate scheduled arrivals per stop

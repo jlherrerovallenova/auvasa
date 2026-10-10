@@ -69,6 +69,8 @@ export interface StopArrival {
   secondsRemaining: number;
   minutesRemaining: number;
   isRealtime: boolean;
+  liveStatus?: 'gps_live' | 'scheduled_sae' | 'scheduled';
+  delaySeconds?: number;
   vehicleId: string | null;
   licensePlate: string | null;
   speed?: number | null;

@@ -288,7 +288,7 @@ function searchStopsByName(query) {
   });
 }
 
-// Calculate real-time arrivals for a stop
+// Calculate real-time arrivals for a stop with GTFS-RT Delay Interpolation & GPS Matching
 async function calculateStopArrivals(stopCode) {
   await ensureRealtimeData();
   const stopObj = stopByCode.get(stopCode);
@@ -296,80 +296,160 @@ async function calculateStopArrivals(stopCode) {
 
   const nowSec = Math.floor(Date.now() / 1000);
   const nowMadrid = new Date();
+  const todayMidnight = new Date(nowMadrid);
+  todayMidnight.setHours(0, 0, 0, 0);
+  const midnightSec = Math.floor(todayMidnight.getTime() / 1000);
 
+  const currentHours = String(nowMadrid.getHours()).padStart(2, '0');
+  const currentMinutes = String(nowMadrid.getMinutes()).padStart(2, '0');
+  const currentTimeStr = `${currentHours}:${currentMinutes}:00`;
+
+  const coveredTripIds = new Set();
   const realTimeArrivals = [];
-  // FIX #1: Track (tripId|stopCode) pairs to avoid duplicates.
-  // A tripUpdate can emit multiple stopTimeUpdates for the same stop (delay propagation),
-  // which would otherwise show the same line twice with near-identical times.
   const seenRTKeys = new Set();
 
   for (const tu of rtState.tripUpdates) {
-    const tripSeqMap = tripStopSeqMap[tu.tripId];
-    if (!tripSeqMap) continue;
+    const staticStops = tripStopSeqMap[tu.tripId];
+    if (!staticStops || staticStops.length === 0) continue;
 
+    // Collect known prediction times from GTFS-RT stopTimeUpdates
+    const knownPreds = new Map();
+    let minUpcomingSeq = 999999;
     for (const stu of tu.stopTimeUpdates) {
-      const mappedStop = tripSeqMap[stu.stopSequence];
-      if (!mappedStop) continue;
-
-      if (mappedStop.stopCode === stopCode || mappedStop.stopId === stopObj.id) {
-        const arrivalTimestamp = stu.arrival || stu.departure;
-        if (!arrivalTimestamp) continue;
-
-        // Deduplicate: same trip visiting the same stop only once
-        const rtKey = `${tu.tripId}|${mappedStop.stopCode || stopCode}`;
-        if (seenRTKeys.has(rtKey)) continue;
-        seenRTKeys.add(rtKey);
-
-        const diffSeconds = arrivalTimestamp - nowSec;
-        if (diffSeconds >= -90 && diffSeconds <= 3600) {
-          const route = routeById.get(tu.routeId) || routeByShortName.get(tu.routeId);
-          const vehicle = rtState.vehicles.find(v => v.tripId === tu.tripId || (tu.vehicleId && v.vehicleId === tu.vehicleId));
-
-          const arrivalDate = new Date(arrivalTimestamp * 1000);
-          const timeFormatted = arrivalDate.toLocaleTimeString('es-ES', {
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZone: 'Europe/Madrid'
-          });
-
-          // Determine directional headsign (e.g. "COVARESA" instead of full generic "Barrio España - Covaresa")
-          let destination = route?.name || '';
-          if (route?.directions) {
-            const dir0Stops = route.directions['0']?.stops || [];
-            const dir1Stops = route.directions['1']?.stops || [];
-            const inDir0 = dir0Stops.some(s => s.stopCode === stopCode || s.stopId === stopObj.id);
-            const inDir1 = dir1Stops.some(s => s.stopCode === stopCode || s.stopId === stopObj.id);
-            if (inDir0 && !inDir1 && route.directions['0']?.headsign) {
-              destination = route.directions['0'].headsign;
-            } else if (inDir1 && !inDir0 && route.directions['1']?.headsign) {
-              destination = route.directions['1'].headsign;
-            }
-          }
-
-          realTimeArrivals.push({
-            tripId: tu.tripId,
-            routeShortName: route?.shortName || tu.routeId,
-            routeColor: route?.color || '#008075',
-            routeTextColor: route?.textColor || '#FFFFFF',
-            destination,
-            exactTime: timeFormatted,
-            timestamp: arrivalTimestamp,
-            secondsRemaining: diffSeconds,
-            minutesRemaining: Math.max(0, Math.round(diffSeconds / 60)),
-            isRealtime: true,
-            vehicleId: tu.vehicleId || vehicle?.vehicleId || null,
-            licensePlate: tu.licensePlate || vehicle?.licensePlate || null,
-            speed: vehicle?.speed || null,
-            occupancy: vehicle?.occupancy ?? 'UNKNOWN',
-          });
+      const arr = stu.arrival || stu.departure;
+      if (arr && stu.stopSequence !== undefined) {
+        knownPreds.set(stu.stopSequence, Number(arr));
+        if (stu.stopSequence < minUpcomingSeq) {
+          minUpcomingSeq = stu.stopSequence;
         }
       }
+    }
+
+    if (knownPreds.size === 0) continue;
+
+    const knownSeqs = Array.from(knownPreds.keys()).sort((a, b) => a - b);
+    const knownDelays = new Map();
+    for (const seq of knownSeqs) {
+      const stopInfo = staticStops.find(s => s.seq === seq);
+      if (stopInfo) {
+        const schedTimestamp = midnightSec + stopInfo.schedSec;
+        const delay = knownPreds.get(seq) - schedTimestamp;
+        knownDelays.set(seq, delay);
+      }
+    }
+
+    // Check if this trip serves the target stop
+    const matchingStop = staticStops.find(s => s.stopCode === stopCode || s.stopId === stopObj.id);
+    if (!matchingStop) continue;
+
+    // Match physical live vehicle if active
+    const vehicle = rtState.vehicles.find(
+      v => v.tripId === tu.tripId || (tu.vehicleId && v.vehicleId === tu.vehicleId)
+    );
+    const hasLiveVehicle = !!vehicle;
+
+    // If bus is actively running on the road, don't show arrivals for stops it has already passed
+    if (hasLiveVehicle && matchingStop.seq < minUpcomingSeq && minUpcomingSeq !== 999999) {
+      continue;
+    }
+
+    // Deduplicate: same trip visiting the same stop only once
+    const rtKey = `${tu.tripId}|${matchingStop.stopCode || stopCode}`;
+    if (seenRTKeys.has(rtKey)) continue;
+    seenRTKeys.add(rtKey);
+
+    let estArrivalTimestamp;
+    const schedTimestamp = midnightSec + matchingStop.schedSec;
+
+    if (knownPreds.has(matchingStop.seq)) {
+      estArrivalTimestamp = knownPreds.get(matchingStop.seq);
+    } else {
+      // Standard GTFS-RT delay interpolation & propagation across intermediate stops
+      let delay = 0;
+      const firstKnownSeq = knownSeqs[0];
+      const lastKnownSeq = knownSeqs[knownSeqs.length - 1];
+
+      if (matchingStop.seq <= firstKnownSeq) {
+        delay = knownDelays.get(firstKnownSeq) || 0;
+      } else if (matchingStop.seq >= lastKnownSeq) {
+        delay = knownDelays.get(lastKnownSeq) || 0;
+      } else {
+        let seqA = firstKnownSeq;
+        let seqB = lastKnownSeq;
+        for (let i = 0; i < knownSeqs.length - 1; i++) {
+          if (knownSeqs[i] <= matchingStop.seq && knownSeqs[i + 1] >= matchingStop.seq) {
+            seqA = knownSeqs[i];
+            seqB = knownSeqs[i + 1];
+            break;
+          }
+        }
+        const delayA = knownDelays.get(seqA) || 0;
+        const delayB = knownDelays.get(seqB) || 0;
+        const stopA = staticStops.find(s => s.seq === seqA);
+        const stopB = staticStops.find(s => s.seq === seqB);
+        if (stopA && stopB && stopB.schedSec > stopA.schedSec) {
+          const factor = (matchingStop.schedSec - stopA.schedSec) / (stopB.schedSec - stopA.schedSec);
+          delay = delayA + factor * (delayB - delayA);
+        } else {
+          delay = delayA;
+        }
+      }
+      estArrivalTimestamp = Math.round(schedTimestamp + delay);
+    }
+
+    const diffSeconds = estArrivalTimestamp - nowSec;
+    // Window: from -45s (just arriving / at stop) up to 75 minutes ahead
+    if (diffSeconds >= -45 && diffSeconds <= 4500) {
+      coveredTripIds.add(tu.tripId);
+      const route = routeById.get(tu.routeId) || routeByShortName.get(tu.routeId);
+      const arrivalDate = new Date(estArrivalTimestamp * 1000);
+      const timeFormatted = arrivalDate.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Madrid'
+      });
+
+      // Determine directional headsign (e.g. "COVARESA" instead of full generic "Barrio España - Covaresa")
+      let destination = route?.name || '';
+      if (route?.directions) {
+        const dir0Stops = route.directions['0']?.stops || [];
+        const dir1Stops = route.directions['1']?.stops || [];
+        const inDir0 = dir0Stops.some(s => s.stopCode === stopCode || s.stopId === stopObj.id);
+        const inDir1 = dir1Stops.some(s => s.stopCode === stopCode || s.stopId === stopObj.id);
+        if (inDir0 && !inDir1 && route.directions['0']?.headsign) {
+          destination = route.directions['0'].headsign;
+        } else if (inDir1 && !inDir0 && route.directions['1']?.headsign) {
+          destination = route.directions['1'].headsign;
+        }
+      }
+
+      const liveStatus = hasLiveVehicle ? 'gps_live' : 'scheduled_sae';
+
+      realTimeArrivals.push({
+        tripId: tu.tripId,
+        routeShortName: route?.shortName || tu.routeId,
+        routeColor: route?.color || '#008075',
+        routeTextColor: route?.textColor || '#FFFFFF',
+        destination,
+        exactTime: timeFormatted,
+        timestamp: estArrivalTimestamp,
+        secondsRemaining: diffSeconds,
+        minutesRemaining: Math.max(0, Math.round(diffSeconds / 60)),
+        isRealtime: hasLiveVehicle,
+        liveStatus,
+        delaySeconds: Math.round(estArrivalTimestamp - schedTimestamp),
+        vehicleId: vehicle?.vehicleId || tu.vehicleId || null,
+        licensePlate: vehicle?.licensePlate || tu.licensePlate || null,
+        speed: vehicle?.speed || null,
+        occupancy: vehicle?.occupancy ?? 'UNKNOWN',
+      });
     }
   }
 
   // Exact tripId set of active GPS vehicles for 100% precise deduplication
   const activeRTTripIds = new Set(realTimeArrivals.map(r => r.tripId).filter(Boolean));
 
+  // Complement with scheduled static arrivals for trips not covered in RT
   const scheduledList = scheduledArrivals[stopCode] || [];
   const scheduledArrivalsOutput = [];
 
@@ -385,10 +465,8 @@ async function calculateStopArrivals(stopCode) {
   const activeServicesSet = new Set(activeServicesList);
 
   for (const s of scheduledList) {
-    // Filter out trips that do not run today (e.g. weekend, holiday, or special football trips)
-    if (s.s && activeServicesSet.size > 0 && !activeServicesSet.has(s.s)) {
-      continue;
-    }
+    if (s.t && coveredTripIds.has(s.t)) continue;
+    if (s.s && activeServicesSet.size > 0 && !activeServicesSet.has(s.s)) continue;
 
     // Exact tripId match: if this specific trip is already running in real-time, skip static schedule
     if (s.t && activeRTTripIds.has(s.t)) {
@@ -396,9 +474,8 @@ async function calculateStopArrivals(stopCode) {
     }
 
     // Parse departure as seconds since midnight — robust against GTFS hours >= 24
-    // e.g. "24:38:42" (B3 night bus) = 88722 seconds, correctly maps to next-day 00:38:42
     const [rawH, rawM, rawSec] = s.d.split(':').map(Number);
-    const depSecOfDay = rawH * 3600 + (rawM || 0) * 60 + (rawSec || 0);
+    const depSecOfDay = (rawH || 0) * 3600 + (rawM || 0) * 60 + (rawSec || 0);
     const currentSecOfDay = nowMadrid.getHours() * 3600 + nowMadrid.getMinutes() * 60 + nowMadrid.getSeconds();
 
     // Only show departures that haven't happened yet (30s grace for buses leaving right now)
@@ -431,6 +508,8 @@ async function calculateStopArrivals(stopCode) {
           secondsRemaining: diffSec,
           minutesRemaining: Math.max(0, Math.round(diffSec / 60)),
           isRealtime: false,
+          liveStatus: 'scheduled',
+          delaySeconds: 0,
           vehicleId: null,
           licensePlate: null,
           occupancy: 'UNKNOWN',
@@ -439,9 +518,7 @@ async function calculateStopArrivals(stopCode) {
     }
   }
 
-  // FIX #5: Deduplicate scheduled arrivals by (routeShortName, timestamp).
-  // Multiple serviceIds can map to the exact same trip at the same time on special days
-  // (festivos, school/football schedules), causing the same bus to appear 2-3 times.
+  // Deduplicate scheduled arrivals by (routeShortName, timestamp)
   const seenSchedKeys = new Set();
   const dedupedSchedArrivals = scheduledArrivalsOutput.filter(s => {
     const key = `${s.routeShortName}|${s.timestamp}`;
@@ -461,7 +538,7 @@ async function calculateStopArrivals(stopCode) {
     lon: stopObj.lon,
     routes: stopObj.routes,
     updatedAt: new Date().toISOString(),
-    realtimeCount: realTimeArrivals.length,
+    realtimeCount: realTimeArrivals.filter(a => a.liveStatus === 'gps_live').length,
     arrivals: allArrivals,
   };
 }
