@@ -80,7 +80,7 @@ export function getBusSvgIllustration({
 }
 
 /**
- * Crea el HTML wrapper para Leaflet DivIcon con badge circular
+ * Crea el HTML wrapper para Leaflet DivIcon con badge circular de autobús
  */
 export function getBusMarkerHtml(opts: BusMarkerRenderOptions): string {
   const size = 36;
@@ -99,6 +99,102 @@ export function getBusMarkerHtml(opts: BusMarkerRenderOptions): string {
       user-select: none;
     ">
       ${svg}
+    </div>
+  `;
+}
+
+export interface StopMarkerRenderOptions {
+  stopCode: string;
+  isSelected?: boolean;
+  color?: string;
+}
+
+/**
+ * Genera marcadores de parada elegantes, vistosos y nítidos con pictograma de autobús y pulso
+ */
+export function getStopMarkerHtml({ isSelected = false, color = '#008075' }: StopMarkerRenderOptions): string {
+  const size = isSelected ? 34 : 24;
+  const cleanColor = color || '#008075';
+  const gradId = cleanColor.replace(/[^a-zA-Z0-9]/g, '');
+
+  if (isSelected) {
+    return `
+      <div class="bus-stop-pin-wrap selected" style="
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: ${size}px;
+        height: ${size}px;
+        cursor: pointer;
+        user-select: none;
+        transform-origin: center center;
+      ">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="100%" height="100%">
+          <defs>
+            <filter id="sel_stop_shadow" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(0,0,0,0.55)"/>
+            </filter>
+            <radialGradient id="sel_stop_grad_${gradId}" cx="35%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#000000" stop-opacity="0.25"/>
+            </radialGradient>
+          </defs>
+          <!-- Pulsing outer radar ring -->
+          <circle cx="18" cy="18" r="16.5" fill="none" stroke="${cleanColor}" stroke-width="2.5" opacity="0.6">
+            <animate attributeName="r" values="14;17;14" dur="1.8s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.75;0.1;0.75" dur="1.8s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Core circle -->
+          <circle cx="18" cy="18" r="13.5" fill="${cleanColor}" stroke="#ffffff" stroke-width="2.5" filter="url(#sel_stop_shadow)"/>
+          <circle cx="18" cy="18" r="13.5" fill="url(#sel_stop_grad_${gradId})"/>
+          <!-- Bus Icon Pictogram -->
+          <g transform="translate(9, 9) scale(0.75)" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 6v6"/>
+            <path d="M16 6v6"/>
+            <path d="M2 12h20"/>
+            <path d="M19 18h1a2 2 0 0 0 2-2V8a3 3 0 0 0-3-3H4a3 3 0 0 0-3 3v8a2 2 0 0 0 2 2h1"/>
+            <circle cx="7" cy="18" r="2" fill="#ffffff"/>
+            <circle cx="17" cy="18" r="2" fill="#ffffff"/>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="bus-stop-pin-wrap" style="
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: ${size}px;
+      height: ${size}px;
+      cursor: pointer;
+      user-select: none;
+      transform-origin: center center;
+    ">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="100%" height="100%">
+        <defs>
+          <filter id="stop_shadow_${gradId}" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="rgba(0,0,0,0.45)"/>
+          </filter>
+          <radialGradient id="stop_grad_${gradId}" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#000000" stop-opacity="0.18"/>
+          </radialGradient>
+        </defs>
+        <!-- Main badge -->
+        <circle cx="14" cy="14" r="11.5" fill="${cleanColor}" stroke="#ffffff" stroke-width="2" filter="url(#stop_shadow_${gradId})"/>
+        <circle cx="14" cy="14" r="11.5" fill="url(#stop_grad_${gradId})"/>
+        <!-- Bus Icon Pictogram -->
+        <g transform="translate(6.5, 6.5) scale(0.62)" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 6v6"/>
+          <path d="M16 6v6"/>
+          <path d="M2 12h20"/>
+          <path d="M19 18h1a2 2 0 0 0 2-2V8a3 3 0 0 0-3-3H4a3 3 0 0 0-3 3v8a2 2 0 0 0 2 2h1"/>
+          <circle cx="7" cy="18" r="2" fill="#ffffff"/>
+          <circle cx="17" cy="18" r="2" fill="#ffffff"/>
+        </g>
+      </svg>
     </div>
   `;
 }

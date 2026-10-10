@@ -4,7 +4,7 @@ import type { BusStop, BusRoute, LiveVehicle } from '../../types/bus.ts';
 import type { CityTrafficSummary } from '../../types/traffic.ts';
 import { VALLADOLID_TRAFFIC_CAMERAS } from '../../utils/traffic.ts';
 import { getBusFleetInfo, parseOccupancy } from '../../utils/fleet.ts';
-import { getBusMarkerHtml } from '../../utils/busIcons.ts';
+import { getBusMarkerHtml, getStopMarkerHtml } from '../../utils/busIcons.ts';
 
 interface MapLayersProps {
   map: L.Map | null;
@@ -294,33 +294,43 @@ export function useMapLayers({
 
     for (const stop of stopsToRender) {
       const isSelected = selectedStop?.code === stop.code;
+      const size = isSelected ? 34 : 24;
+      const stopColor = selectedRoute?.color || '#008075';
 
       const stopIcon = L.divIcon({
-        className: 'bus-stop-pin',
-        html: `
-          <div style="
-            width: ${isSelected ? '16px' : '10px'};
-            height: ${isSelected ? '16px' : '10px'};
-            background: ${isSelected ? '#0d9488' : '#475569'};
-            border: 2px solid ${isSelected ? '#ffffff' : '#0f172a'};
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: ${isSelected ? '0 0 14px rgba(13, 148, 136, 0.9)' : 'none'};
-            transition: transform 0.2s;
-          "></div>
-        `,
-        iconSize: [isSelected ? 16 : 10, isSelected ? 16 : 10],
-        iconAnchor: [isSelected ? 8 : 5, isSelected ? 8 : 5],
+        className: 'bus-stop-pin-container',
+        html: getStopMarkerHtml({
+          stopCode: stop.code,
+          isSelected,
+          color: stopColor,
+        }),
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
       });
 
-      const marker = L.marker([stop.lat, stop.lon], { icon: stopIcon });
+      const marker = L.marker([stop.lat, stop.lon], {
+        icon: stopIcon,
+        zIndexOffset: isSelected ? 1000 : 100,
+      });
+
+      const routeBadges = (stop.routes || []).slice(0, 5).map(r => (
+        `<span style="display: inline-block; background: #f1f5f9; color: #1e293b; padding: 1px 5px; border-radius: 4px; font-weight: 800; font-size: 10px; border: 1px solid #cbd5e1;">${r}</span>`
+      )).join(' ');
+
+      const extraRoutes = (stop.routes || []).length > 5
+        ? `<span style="font-size: 10px; color: #64748b; font-weight: 700;">+${(stop.routes || []).length - 5}</span>`
+        : '';
 
       marker.bindTooltip(
-        `<div style="font-size: 11px; font-weight: 600; line-height: 1.3;">
-          <div><strong style="color: #0d9488;">#${stop.code}</strong> ${stop.name}</div>
-          <div style="font-size: 10px; color: #64748b; font-weight: 500; margin-top: 1px;">Pulsa para ver autobuses y tiempos</div>
+        `<div style="font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; line-height: 1.35; padding: 2px 0;">
+          <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 3px;">
+            <span style="background: ${stopColor}; color: #ffffff; padding: 1px 5px; border-radius: 5px; font-weight: 800; font-size: 10px; font-family: monospace;">#${stop.code}</span>
+            <strong style="font-size: 12px; color: #0f172a; font-weight: 700;">${stop.name}</strong>
+          </div>
+          ${routeBadges ? `<div style="display: flex; align-items: center; gap: 3px; margin-top: 3px;">${routeBadges} ${extraRoutes}</div>` : ''}
+          <div style="font-size: 9.5px; color: #64748b; font-weight: 500; margin-top: 3px;">Toca para ver llegadas y tiempos en directo</div>
         </div>`,
-        { direction: 'top', offset: [0, -6] }
+        { direction: 'top', offset: [0, -12], opacity: 0.98 }
       );
 
       const handleClick = (e: L.LeafletMouseEvent) => {
