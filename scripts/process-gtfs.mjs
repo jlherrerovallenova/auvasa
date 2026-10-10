@@ -185,9 +185,16 @@ async function processGTFS() {
         const [hh, mm, ss] = depTime.split(':').map(Number);
         const schedSec = (hh || 0) * 3600 + (mm || 0) * 60 + (ss || 0);
 
-        // Map trip stop sequences for RT lookup & delay interpolation
-        if (!tripStopSeqMap[tripId]) tripStopSeqMap[tripId] = [];
-        tripStopSeqMap[tripId].push({
+        // Map trip stop sequences with trip metadata for RT lookup & delay interpolation
+        if (!tripStopSeqMap[tripId]) {
+          tripStopSeqMap[tripId] = {
+            routeId: tripInfo.routeId,
+            headsign: tripInfo.headsign,
+            directionId: tripInfo.directionId,
+            stops: []
+          };
+        }
+        tripStopSeqMap[tripId].stops.push({
           seq,
           stopId,
           stopCode: stopIdToCode[stopId] || stopId,
@@ -225,9 +232,11 @@ async function processGTFS() {
     }
   }
 
-  // Ensure tripStopSeqMap arrays are sorted by sequence
+  // Ensure tripStopSeqMap stop arrays are sorted by sequence
   for (const tid in tripStopSeqMap) {
-    tripStopSeqMap[tid].sort((a, b) => a.seq - b.seq);
+    if (tripStopSeqMap[tid].stops) {
+      tripStopSeqMap[tid].stops.sort((a, b) => a.seq - b.seq);
+    }
   }
 
   // Sort and deduplicate scheduled arrivals per stop

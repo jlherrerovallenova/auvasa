@@ -309,8 +309,12 @@ async function calculateStopArrivals(stopCode) {
   const seenRTKeys = new Set();
 
   for (const tu of rtState.tripUpdates) {
-    const staticStops = tripStopSeqMap[tu.tripId];
-    if (!staticStops || staticStops.length === 0) continue;
+    const tripData = tripStopSeqMap[tu.tripId];
+    if (!tripData) continue;
+    const staticStops = Array.isArray(tripData) ? tripData : tripData.stops || [];
+    if (staticStops.length === 0) continue;
+
+    const tripHeadsign = tripData.headsign || '';
 
     // Collect known prediction times from GTFS-RT stopTimeUpdates
     const knownPreds = new Map();
@@ -342,11 +346,10 @@ async function calculateStopArrivals(stopCode) {
     const matchingStop = staticStops.find(s => s.stopCode === stopCode || s.stopId === stopObj.id);
     if (!matchingStop) continue;
 
-    // Match physical live vehicle if active
-    const vehicle = rtState.vehicles.find(
-      v => v.tripId === tu.tripId || (tu.vehicleId && v.vehicleId === tu.vehicleId)
-    );
-    const hasLiveVehicle = !!vehicle;
+    // Strict vehicle matching:
+    // A live GPS vehicle only belongs to this arrival if it is actively broadcasting GPS on this specific tripId
+    const liveVehicle = rtState.vehicles.find(v => v.tripId === tu.tripId);
+    const hasLiveVehicle = !!liveVehicle;
 
     // If bus is actively running on the road, don't show arrivals for stops it has already passed
     if (hasLiveVehicle && matchingStop.seq < minUpcomingSeq && minUpcomingSeq !== 999999) {
@@ -409,20 +412,8 @@ async function calculateStopArrivals(stopCode) {
         timeZone: 'Europe/Madrid'
       });
 
-      // Determine directional headsign (e.g. "COVARESA" instead of full generic "Barrio España - Covaresa")
-      let destination = route?.name || '';
-      if (route?.directions) {
-        const dir0Stops = route.directions['0']?.stops || [];
-        const dir1Stops = route.directions['1']?.stops || [];
-        const inDir0 = dir0Stops.some(s => s.stopCode === stopCode || s.stopId === stopObj.id);
-        const inDir1 = dir1Stops.some(s => s.stopCode === stopCode || s.stopId === stopObj.id);
-        if (inDir0 && !inDir1 && route.directions['0']?.headsign) {
-          destination = route.directions['0'].headsign;
-        } else if (inDir1 && !inDir0 && route.directions['1']?.headsign) {
-          destination = route.directions['1'].headsign;
-        }
-      }
-
+      // Exact trip headsign from GTFS
+      const destination = tripHeadsign || route?.destination || route?.name || '';
       const liveStatus = hasLiveVehicle ? 'gps_live' : 'scheduled_sae';
 
       realTimeArrivals.push({
@@ -438,10 +429,10 @@ async function calculateStopArrivals(stopCode) {
         isRealtime: hasLiveVehicle,
         liveStatus,
         delaySeconds: Math.round(estArrivalTimestamp - schedTimestamp),
-        vehicleId: vehicle?.vehicleId || tu.vehicleId || null,
-        licensePlate: vehicle?.licensePlate || tu.licensePlate || null,
-        speed: vehicle?.speed || null,
-        occupancy: vehicle?.occupancy ?? 'UNKNOWN',
+        vehicleId: liveVehicle?.vehicleId || null,
+        licensePlate: liveVehicle?.licensePlate || null,
+        speed: liveVehicle?.speed || null,
+        occupancy: liveVehicle?.occupancy ?? 'UNKNOWN',
       });
     }
   }

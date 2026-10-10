@@ -91,25 +91,17 @@ export const useAppNavigation = ({
 
   const handleLocateBus = useCallback(
     (arr: StopArrival) => {
-      // 1. Try to find the exact live GPS vehicle
-      let found = vehicles.find(
+      // 1. Only focus a live vehicle if it has an active live GPS vehicle attached to this specific arrival
+      const found = vehicles.find(
         v => arr.vehicleId && (v.vehicleId === arr.vehicleId || v.id === arr.vehicleId)
       );
-
-      // 2. Fallback: find any live vehicle active on this line
-      if (!found && arr.routeShortName) {
-        const lineBuses = vehicles.filter(
-          v => v.lineName.toUpperCase() === arr.routeShortName.toUpperCase() || v.routeId === arr.routeShortName
-        );
-        if (lineBuses.length > 0) {
-          found = lineBuses[0];
-        }
-      }
 
       if (found && found.lat && found.lon) {
         setFocusedVehicle(found);
         setActiveTab('map');
       } else {
+        // If this is a future scheduled arrival without a vehicle active on the road yet,
+        // highlight the route line and center the map on the stop!
         const route =
           routeMapById.get(arr.routeShortName) ||
           routes.find(r => r.shortName.toUpperCase() === arr.routeShortName.toUpperCase());

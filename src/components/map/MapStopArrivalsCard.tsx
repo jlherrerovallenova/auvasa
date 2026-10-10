@@ -385,6 +385,27 @@ const MapStopCardBody: React.FC<MapStopCardBodyProps> = ({
   onStartOnboard,
   onLocateBus,
 }) => {
+  const [selectedLineFilter, setSelectedLineFilter] = useState<string | null>(null);
+
+  const availableLines = React.useMemo(() => {
+    if (!data?.arrivals) return [];
+    const map = new Map<string, number>();
+    for (const a of data.arrivals) {
+      if (a.routeShortName) {
+        map.set(a.routeShortName, (map.get(a.routeShortName) || 0) + 1);
+      }
+    }
+    return Array.from(map.entries()).map(([line, count]) => ({ line, count }));
+  }, [data?.arrivals]);
+
+  const displayedArrivals = React.useMemo(() => {
+    if (!data?.arrivals) return [];
+    if (!selectedLineFilter) return data.arrivals;
+    return data.arrivals.filter(
+      a => a.routeShortName.toUpperCase() === selectedLineFilter.toUpperCase()
+    );
+  }, [data?.arrivals, selectedLineFilter]);
+
   if (loading && !data) {
     return (
       <div className="p-3 sm:p-3.5 overflow-y-auto flex-1 space-y-2">
@@ -447,15 +468,47 @@ const MapStopCardBody: React.FC<MapStopCardBodyProps> = ({
         </button>
       )}
 
-      {data && data.arrivals.length > 0 && (
+      {/* Selector de líneas por píldoras si la parada tiene más de 1 línea */}
+      {availableLines.length > 1 && (
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setSelectedLineFilter(null)}
+            className={`px-2 py-0.5 rounded-lg font-bold transition-colors cursor-pointer shrink-0 text-[11px] ${
+              selectedLineFilter === null
+                ? 'bg-teal-600 text-white shadow-2xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            Todas ({data?.arrivals.length || 0})
+          </button>
+          {availableLines.map(({ line, count }) => (
+            <button
+              key={line}
+              type="button"
+              onClick={() => setSelectedLineFilter(line === selectedLineFilter ? null : line)}
+              className={`px-2 py-0.5 rounded-lg font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1 text-[11px] ${
+                selectedLineFilter === line
+                  ? 'bg-teal-600 text-white shadow-2xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-750'
+              }`}
+            >
+              <span>L{line}</span>
+              <span className="text-[9px] opacity-75 font-mono">({count})</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {displayedArrivals.length > 0 && (
         <div className="space-y-1.5">
-          {data.arrivals.map(arr => {
+          {displayedArrivals.map(arr => {
             const uniqueKey = `${arr.routeShortName}_${arr.timestamp}_${arr.exactTime}_${arr.isRealtime ? 'rt' : 'sc'}`;
             return (
               <MapArrivalRow
                 key={uniqueKey}
                 arr={arr}
-                allArrivals={data.arrivals}
+                allArrivals={data?.arrivals || []}
                 stop={stop}
                 userLat={userLat}
                 userLon={userLon}

@@ -460,6 +460,7 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
     const saved = localStorage.getItem('vallabus_only_realtime');
     return saved !== null ? saved === 'true' : true;
   });
+  const [selectedLineFilter, setSelectedLineFilter] = React.useState<string | null>(null);
 
   const updateRealtimeFilter = (val: boolean) => {
     setOnlyRealtime(val);
@@ -473,13 +474,29 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
   const realTimeCount = data?.arrivals.filter(a => a.isRealtime).length || 0;
   const hasScheduled = (data?.arrivals.length || 0) > realTimeCount;
 
+  // Extract unique lines available in this stop's arrivals
+  const availableLines = React.useMemo(() => {
+    if (!data?.arrivals) return [];
+    const map = new Map<string, number>();
+    for (const a of data.arrivals) {
+      if (a.routeShortName) {
+        map.set(a.routeShortName, (map.get(a.routeShortName) || 0) + 1);
+      }
+    }
+    return Array.from(map.entries()).map(([line, count]) => ({ line, count }));
+  }, [data?.arrivals]);
+
   const displayedArrivals = React.useMemo(() => {
     if (!data?.arrivals) return [];
-    if (onlyRealtime) {
-      return data.arrivals.filter(a => a.isRealtime);
+    let list = data.arrivals;
+    if (selectedLineFilter) {
+      list = list.filter(a => a.routeShortName.toUpperCase() === selectedLineFilter.toUpperCase());
     }
-    return data.arrivals;
-  }, [data?.arrivals, onlyRealtime]);
+    if (onlyRealtime) {
+      return list.filter(a => a.isRealtime);
+    }
+    return list;
+  }, [data?.arrivals, selectedLineFilter, onlyRealtime]);
 
   return (
     <div className="p-5 overflow-y-auto flex-1 space-y-3">
@@ -498,6 +515,38 @@ const StopArrivalsBody: React.FC<StopArrivalsBodyProps> = ({
           <span>Actualizar</span>
         </button>
       </div>
+
+      {/* Selector de líneas por píldoras si la parada tiene más de 1 línea */}
+      {availableLines.length > 1 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setSelectedLineFilter(null)}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer shrink-0 text-xs ${
+              selectedLineFilter === null
+                ? 'bg-teal-600 text-white shadow-2xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            Todas ({data?.arrivals.length || 0})
+          </button>
+          {availableLines.map(({ line, count }) => (
+            <button
+              key={line}
+              type="button"
+              onClick={() => setSelectedLineFilter(line === selectedLineFilter ? null : line)}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1 text-xs ${
+                selectedLineFilter === line
+                  ? 'bg-teal-600 text-white shadow-2xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-750'
+              }`}
+            >
+              <span>Línea {line}</span>
+              <span className="text-[10px] opacity-75 font-mono">({count})</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {hasScheduled && data && data.arrivals.length > 0 && (
         <RealtimeFilterTabs
