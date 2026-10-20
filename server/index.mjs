@@ -307,6 +307,7 @@ async function calculateStopArrivals(stopCode) {
   const coveredTripIds = new Set();
   const realTimeArrivals = [];
   const seenRTKeys = new Set();
+  const vehiclesByTripId = new Map(rtState.vehicles.map(v => [v.tripId, v]));
 
   for (const tu of rtState.tripUpdates) {
     const tripData = tripStopSeqMap[tu.tripId];
@@ -348,7 +349,7 @@ async function calculateStopArrivals(stopCode) {
 
     // Strict vehicle matching:
     // A live GPS vehicle only belongs to this arrival if it is actively broadcasting GPS on this specific tripId
-    const liveVehicle = rtState.vehicles.find(v => v.tripId === tu.tripId);
+    const liveVehicle = vehiclesByTripId.get(tu.tripId);
     const hasLiveVehicle = !!liveVehicle;
 
     // If bus is actively running on the road, don't show arrivals for stops it has already passed
